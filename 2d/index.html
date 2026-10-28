@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>地理过程教学平台 · GeoLab</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:#060b12;color:#dfeaf5;overflow:hidden}
+button{font-family:inherit}
+#app{height:100vh;display:flex;flex-direction:column}
+/* ---------- header ---------- */
+#hd{height:58px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:linear-gradient(180deg,#0e1b2b,#0a131f);border-bottom:1px solid #1c3049}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{font-size:26px;line-height:1}
+.brand h1{font-size:20px;letter-spacing:3px;color:#fff;font-weight:700}
+.brand p{font-size:12px;color:#6fa3c7;margin-top:2px;letter-spacing:1px}
+.hd-ctrl{display:flex;gap:12px;align-items:center}
+.hbtn{background:#122a41;border:1px solid #24507a;color:#cfe6f8;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;letter-spacing:1px}
+.hbtn:hover{background:#1a3a5a}
+.speedbox{display:flex;align-items:center;gap:8px;font-size:12px;color:#7ba7c9}
+.speedbox input{width:110px;accent-color:#38bdf8}
+#speedVal{min-width:34px;color:#9fd0ef}
+/* ---------- layout ---------- */
+#main{flex:1;display:flex;min-height:0}
+#side{width:216px;flex:none;background:#0a141f;border-right:1px solid #16283d;padding:10px 8px 16px;overflow-y:auto}
+.grp{margin:12px 6px 4px;font-size:12px;color:#5f8db0;letter-spacing:3px}
+.sbtn{display:flex;width:100%;gap:9px;align-items:center;padding:9px 10px;margin:3px 0;border:1px solid transparent;border-radius:9px;background:none;color:#b9d0e2;font-size:14px;cursor:pointer;text-align:left}
+.sbtn:hover{background:#122438}
+.sbtn.on{background:linear-gradient(90deg,#0e3a52,#123c50);border-color:#1f6a8c;color:#fff}
+.sbtn .ic{font-size:17px;width:22px;text-align:center}
+#stage{flex:1;position:relative;min-width:0;background:#04101c}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* ---------- overlays ---------- */
+#scnTitle{position:absolute;top:12px;left:18px;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.7)}
+#scnName{font-size:21px;color:#fff;letter-spacing:2px}
+#scnSub{display:block;font-size:12.5px;color:#8fb9d8;margin-top:4px;letter-spacing:1px}
+#hint{position:absolute;right:14px;top:14px;font-size:11.5px;color:#517a99;background:rgba(8,18,28,.55);padding:5px 10px;border-radius:8px;pointer-events:none}
+#ctrlbar{position:absolute;left:0;right:0;bottom:0;height:54px;display:flex;background:rgba(7,14,22,.92);border-top:1px solid #16283d;gap:10px;padding:0 12px;align-items:center;backdrop-filter:blur(4px)}
+#ctrls{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;flex:1;scrollbar-width:thin}
+#ctrls::-webkit-scrollbar{height:5px}
+#ctrls::-webkit-scrollbar-thumb{background:#1d3a55;border-radius:3px}
+.chip{background:#102131;border:1px solid #234866;color:#bcd9ee;font-size:12.5px;padding:6px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.chip:hover{background:#16304b}
+.chip.on{background:#155e75;border-color:#2a9db5;color:#fff}
+.seg{display:flex;border:1px solid #24425f;border-radius:8px;overflow:hidden;flex:none}
+.seg button{background:#0e2033;border:none;color:#a9cbe4;font-size:12.5px;padding:6px 12px;cursor:pointer;white-space:nowrap}
+.seg button+button{border-left:1px solid #24425f}
+.seg button.on{background:#1b6f95;color:#fff}
+.ctl-lab{font-size:12px;color:#7ba7c9;white-space:nowrap}
+#ctrls input[type=range]{accent-color:#38bdf8;width:100px}
+/* ---------- points card ---------- */
+#pointsCard{position:absolute;right:12px;bottom:64px;width:352px;max-height:56%;overflow-y:auto;background:rgba(8,17,27,.94);border:1px solid #1d3a55;border-radius:12px;padding:12px 16px 14px;display:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+#pointsCard.show{display:block}
+#pointsCard h3{font-size:14px;margin-bottom:4px;color:#8fd3f4;letter-spacing:1px}
+#pointsCard li{font-size:13px;line-height:1.75;color:#c9ddef;margin:5px 0 5px 18px}
+#pointsCard li::marker{color:#38bdf8}
+#btnPoints.on{background:#155e75;border-color:#2a9db5;color:#fff}
+@media (max-width:1100px){#pointsCard{width:300px}}
+@media (max-width:900px){#side{width:170px}.brand p{display:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="hd">
+    <div class="brand">
+      <div class="logo">🌍</div>
+      <div>
+        <h1>地理过程教学平台</h1>
+        <p>洋流 · 大气环流 · 水循环 · 课堂可视化演示</p>
+      </div>
+    </div>
+    <div class="hd-ctrl">
+      <button id="btnPlay" class="hbtn">⏸ 暂停</button>
+      <div class="speedbox">速度<input id="speed" type="range" min="0.2" max="2.5" step="0.1" value="1"><span id="speedVal">1.0×</span></div>
+      <button id="btnFull" class="hbtn">⛶ 全屏</button>
+    </div>
+  </header>
+  <div id="main">
+    <nav id="side"></nav>
+    <div id="stage">
+      <canvas id="cv"></canvas>
+      <div id="scnTitle"><b id="scnName"></b><span id="scnSub"></span></div>
+      <div id="hint">空格 暂停/播放 · ←→ 切换专题 · 1-7 选择 · F 全屏</div>
+      <div id="pointsCard"><h3>📖 讲解要点</h3><ul id="points"></ul></div>
+      <div id="ctrlbar"><div id="ctrls"></div><button id="btnPoints" class="chip">📖 要点</button></div>
+    </div>
+  </div>
+</div>
+<script>
+'use strict';
+/* ================= 基础工具 ================= */
+const $=s=>document.querySelector(s);
+const TAU=Math.PI*2, RAD=Math.PI/180;
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const lerp=(a,b,t)=>a+(b-a)*t;
+function seeded(seed){let s=seed>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
+
+const cv=$('#cv'), ctx=cv.getContext('2d');
+let W=200,H=600,DPR=1;
+const stage=$('#stage');
+function fit(){
+  const r=stage.getBoundingClientRect();
+  W=Math.max(60,r.width); H=Math.max(60,r.height);
+  DPR=window.devicePixelRatio||1;
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  if(cur&&cur.layout)cur.layout();
+}
+new ResizeObserver(fit).observe(stage);
+
+/* ================= 绘制辅助 ================= */
+function bg(g,c1,c2){const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,c1);gr.addColorStop(1,c2);g.fillStyle=gr;g.fillRect(0,0,W,H);}
+function roundRect(g,x,y,w,h,r){r=Math.min(r,w/2,h/2);g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function haloText(g,txt,x,y,o={}){
+  const size=o.size||14,color=o.color||'#eaf6ff',weight=o.weight||600,align=o.align||'center';
+  g.font=`${weight} ${size}px "Microsoft YaHei",sans-serif`;
+  g.textAlign=align;g.textBaseline=o.base||'middle';
+  g.lineWidth=o.lw||3.5;g.strokeStyle=o.halo||'rgba(4,10,18,.88)';g.lineJoin='round';
+  g.strokeText(txt,x,y);g.fillStyle=color;g.fillText(txt,x,y);
+}
+/* 标签气泡：y 为锚点，dy 为气泡相对锚点的偏移（负=在上方） */
+function chip(g,txt,x,y,o={}){
+  const size=o.size||12.5,pad=o.pad||7;
+  g.font=`600 ${size}px "Microsoft YaHei",sans-serif`;
+  const w=g.measureText(txt).width+pad*2,h=size+pad*1.4;
+  const align=o.align||'center';
+  let xx=align==='center'?x-w/2:align==='left'?x:x-w;
+  let yy=y+(o.dy===undefined?-h-4:o.dy);
+  g.fillStyle=o.bg||'rgba(8,20,32,.82)';roundRect(g,xx,yy,w,h,6);g.fill();
+  g.strokeStyle=o.bc||'rgba(140,200,255,.35)';g.lineWidth=1;g.stroke();
+  g.fillStyle=o.fg||'#eaf6ff';g.textAlign='left';g.textBaseline='middle';
+  g.fillText(txt,xx+pad,yy+h/2+0.5);
+  return [xx+w/2,yy+h];
+}
+function leader(g,x1,y1,x2,y2,c){g.strokeStyle=c||'rgba(160,210,240,.45)';g.lineWidth=1;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();}
+function arrowHead(g,x,y,ang,size,color){
+  g.save();g.translate(x,y);g.rotate(ang);g.fillStyle=color;
+  g.beginPath();g.moveTo(0,0);g.lineTo(-size,-size*0.45);g.lineTo(-size,size*0.45);g.closePath();g.fill();g.restore();
+}
+function arrow(g,x1,y1,x2,y2,o={}){
+  g.save();
+  if(o.dash)g.setLineDash(o.dash);
+  g.strokeStyle=o.color||'#ffd166';g.lineWidth=o.width||2.5;g.lineCap='round';
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();g.setLineDash([]);
+  arrowHead(g,x2,y2,Math.atan2(y2-y1,x2-x1),o.head||9,o.color||'#ffd166');
+  g.restore();
+}
+function qarrow(g,p0,p1,p2,o={}){
+  g.save();
+  if(o.dash)g.setLineDash(o.dash);
+  g.strokeStyle=o.color||'#aee6ff';g.lineWidth=o.width||3;g.lineCap='round';
+  g.beginPath();g.moveTo(p0[0],p0[1]);g.quadraticCurveTo(p1[0],p1[1],p2[0],p2[1]);g.stroke();g.setLineDash([]);
+  arrowHead(g,p2[0],p2[1],Math.atan2(p2[1]-p1[1],p2[0]-p1[0]),o.head||12,o.color||'#aee6ff');
+  g.restore();
+}
+/* 波浪形辐射箭头，返回采样函数供光子使用 */
+function wavySampler(x1,y1,x2,y2,o){
+  const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L,px=-uy,py=ux;
+  const amp=o.amp||5,wl=o.wl||28;
+  return t=>{
+    const s=clamp(t,0,1)*L;
+    const tp=o.taper||0.22;
+    const env=t<tp?t/tp:t>1-tp?(1-t)/tp:1;
+    const off=Math.sin(s/wl*TAU+(o.phase||0))*amp*env;
+    return [x1+ux*s+px*off,y1+uy*s+py*off,Math.atan2(dy,dx)];
+  };
+}
+function wavy(g,x1,y1,x2,y2,o={}){
+  const f=wavySampler(x1,y1,x2,y2,o);
+  g.strokeStyle=o.color||'#ffd45c';g.lineWidth=o.width||2.6;g.lineCap='round';
+  g.beginPath();
+  const N=46;
+  for(let i=0;i<=N;i++){const p=f(i/N);i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);}
+  g.stroke();
+  arrowHead(g,x2,y2,Math.atan2(y2-y1,x2-x1),o.head||10,o.color||'#ffd45c');
+  return f;
+}
+
+/* ================= 路径与粒子 ================= */
+function catmull(pts,closed,step=9,tension=0.42){
+  const n=pts.length;if(n<3)return pts.slice();
+  const get=i=>closed?pts[((i%n)+n)%n]:pts[clamp(i,0,n-1)];
+  const segs=closed?n:n-1,out=[];
+  for(let i=0;i<segs;i++){
+    const p0=get(i-1),p1=get(i),p2=get(i+1),p3=get(i+2);
+    const m1=[(p2[0]-p0[0])*tension,(p2[1]-p0[1])*tension];
+    const m2=[(p3[0]-p1[0])*tension,(p3[1]-p1[1])*tension];
+    const d=Math.hypot(p2[0]-p1[0],p2[1]-p1[1]),k=Math.max(2,Math.round(d/step));
+    for(let j=0;j<k;j++){
+      const t=j/k,t2=t*t,t3=t2*t;
+      const h00=2*t3-3*t2+1,h10=t3-2*t2+t,h01=-2*t3+3*t2,h11=t3-t2;
+      out.push([
+        h00*p1[0]+h10*m1[0]+h01*p2[0]+h11*m2[0],
+        h00*p1[1]+h10*m1[1]+h01*p2[1]+h11*m2[1]
+      ]);
+    }
+  }
+  out.push(closed?pts[0].slice():pts[n-1].slice());
+  return out;
+}
+function buildPath(pts,o={}){
+  let P=(pts&&pts.length)?pts:[[0,0]];
+  if(o.smooth&&P.length>2)P=catmull(pts,!!o.closed,o.step||9);
+  else if(o.closed)P=pts.concat([pts[0]]);
+  const segs=[];let len=0;
+  for(let i=1;i<P.length;i++){
+    const a=P[i-1],b=P[i],l=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    if(l<1e-4)continue;
+    segs.push({a,b,l,s:len});len+=l;
+  }
+  if(!segs.length)segs.push({a:P[0],b:P[P.length-1]||P[0],l:1,s:0}),len=1;
+  return {
+    len,
+    at(t){t=((t%1)+1)%1;let d=t*len;
+      for(const s of segs){if(d<=s.s+s.l){const k=(d-s.s)/s.l;return [s.a[0]+(s.b[0]-s.a[0])*k,s.a[1]+(s.b[1]-s.a[1])*k];}}
+      const l0=segs[segs.length-1];return [l0.b[0],l0.b[1]];},
+    ang(t){t=((t%1)+1)%1;let d=t*len;
+      for(const s of segs){if(d<=s.s+s.l)return Math.atan2(s.b[1]-s.a[1],s.b[0]-s.a[0]);}
+      return 0;}
+  };
+}
+/* 沿路径的流动人字纹 */
+function chevrons(g,path,{spacing=90,color='rgba(255,255,255,.5)',size=6,phase=0}={}){
+  const n=Math.max(1,Math.floor(path.len/spacing));
+  g.save();g.strokeStyle=color;g.lineWidth=2.4;g.lineCap='round';
+  for(let i=0;i<n;i++){
+    const t=((i/n)+phase)%1,p=path.at(t),a=path.ang(t);
+    g.save();g.translate(p[0],p[1]);g.rotate(a);
+    g.beginPath();g.moveTo(-size,-size*0.62);g.lineTo(size*0.4,0);g.lineTo(-size,size*0.62);g.stroke();
+    g.restore();
+  }
+  g.restore();
+}
+/* 粒子流：paths 为 buildPath 数组 */
+function makeFlow(paths,o={}){
+  const per=o.per||8,speed=o.speed||34,colors=o.colors||['#8fd3f4'];
+  const trail=o.trail||13,loop=!!o.loop,fade=o.fade!==false;
+  const parts=[];
+  paths.forEach((p,pi)=>{
+    const n=Math.max(2,Math.round(per*(0.4+p.len/260)));
+    for(let i=0;i<n;i++)parts.push({pi,t:(i+Math.random()*0.7)/n,sp:speed*(0.8+Math.random()*0.45),sz:(o.size||2.6)*(0.75+Math.random()*0.6)});
+  });
+  return {
+    paths,parts,baseAlpha:o.alpha||1,
+    update(dt){for(const p of parts){const L=paths[p.pi].len;p.t+=dt*p.sp/L;if(p.t>1)p.t-=loop?1:1;if(p.t<0)p.t+=1;}},
+    setDir(d){for(const p of parts)p.sp=Math.abs(p.sp)*d;},
+    draw(g){
+      for(const p of parts){
+        const path=paths[p.pi],t=p.t;
+        let a=this.baseAlpha;
+        if(fade&&!loop)a*=Math.min(1,Math.min(t,1-t)/0.08);
+        if(a<=0.01)continue;
+        const pos=path.at(t),pos2=path.at(Math.max(0,t-trail/path.len));
+        const col=colors[p.pi%colors.length];
+        g.globalAlpha=a*0.3;g.strokeStyle=col;g.lineWidth=p.sz*1.8;g.lineCap='round';
+        g.beginPath();g.moveTo(pos2[0],pos2[1]);g.lineTo(pos[0],pos[1]);g.stroke();
+        g.globalAlpha=a*0.25;g.fillStyle=col;g.beginPath();g.arc(pos[0],pos[1],p.sz*2.4,0,TAU);g.fill();
+        g.globalAlpha=a;g.beginPath();g.arc(pos[0],pos[1],p.sz,0,TAU);g.fill();
+        g.globalAlpha=1;
+      }
+    }
+  };
+}
+
+/* ================= 世界地图数据（简化多边形，经度,纬度） ================= */
+const LAND=[
+  /* 北美 */
+  [[-168,65],[-165,60],[-158,57],[-148,60],[-136,57],[-130,52],[-125,48],[-124,40],[-118,33],[-113,27],[-110,23],[-105,19],[-96,15],[-90,13],[-83,8],[-78,8],[-82,10],[-84,15],[-88,16],[-87,21],[-90,21],[-96,19],[-97,22],[-97,27],[-90,29],[-84,30],[-83,28],[-81,25],[-80,27],[-81,31],[-77,34],[-74,40],[-70,42],[-66,44],[-60,45],[-53,47],[-56,52],[-60,55],[-62,58],[-64,60],[-70,60],[-77,63],[-85,66],[-95,68],[-110,68],[-125,70],[-140,70],[-155,71],[-162,69],[-168,65]],
+  /* 格陵兰 */
+  [[-45,60],[-53,66],[-58,72],[-60,76],[-55,80],[-45,83],[-30,83],[-20,81],[-18,76],[-22,70],[-25,65],[-38,60]],
+  /* 南美 */
+  [[-77,8],[-72,11],[-64,10],[-56,6],[-50,3],[-44,-3],[-35,-6],[-37,-12],[-39,-18],[-45,-24],[-48,-28],[-53,-34],[-57,-38],[-62,-41],[-65,-47],[-69,-52],[-71,-54],[-73,-50],[-74,-44],[-71,-36],[-71,-28],[-70,-20],[-76,-14],[-80,-6],[-81,-2],[-78,1],[-77,5]],
+  /* 非洲 */
+  [[-6,35],[-10,31],[-16,24],[-17,15],[-12,8],[-8,5],[-4,5],[4,6],[9,4],[9,0],[12,-5],[13,-12],[15,-20],[17,-29],[20,-35],[26,-34],[31,-29],[33,-24],[36,-19],[40,-15],[40,-10],[42,-4],[46,2],[51,11],[45,11],[43,12],[40,15],[38,18],[35,23],[33,28],[32,31],[25,32],[19,31],[10,34],[10,37],[5,36],[0,36],[-6,35]],
+  /* 欧亚 */
+  [[-9,37],[-9,43],[-2,44],[2,48],[4,52],[8,55],[8,58],[5,61],[10,64],[14,68],[20,70],[28,71],[35,68],[45,67],[55,69],[68,70],[73,73],[82,75],[95,77],[105,77],[113,74],[125,73],[140,72],[150,70],[160,69],[170,67],[179,66],[172,62],[163,58],[157,52],[150,59],[142,54],[137,47],[132,43],[127,39],[125,35],[121,37],[120,32],[117,24],[110,20],[107,12],[104,9],[100,7],[103,2],[100,6],[98,9],[95,15],[91,22],[87,21],[81,15],[77,8],[73,16],[68,22],[62,25],[57,26],[52,29],[49,30],[51,25],[56,25],[59,22],[53,17],[45,13],[41,16],[38,21],[34,28],[34,32],[36,36],[31,36],[27,37],[24,38],[21,40],[19,42],[16,44],[13,44],[16,41],[15,38],[11,42],[9,44],[6,43],[3,42],[0,40],[-2,37],[-6,36],[-9,37]],
+  /* 澳大利亚 */
+  [[114,-22],[113,-26],[115,-34],[119,-35],[124,-33],[129,-32],[133,-32],[136,-35],[140,-38],[145,-39],[148,-38],[150,-36],[153,-31],[153,-26],[149,-21],[146,-19],[143,-14],[142,-11],[140,-17],[136,-15],[135,-12],[131,-12],[126,-14],[122,-17],[114,-22]],
+  /* 南极 */
+  [[-180,-73],[-160,-76],[-140,-74],[-120,-74],[-100,-73],[-80,-72],[-68,-68],[-62,-64],[-58,-63],[-60,-68],[-45,-77],[-30,-72],[-15,-70],[0,-69],[15,-70],[30,-68],[45,-67],[60,-67],[75,-68],[90,-66],[105,-66],[120,-66],[135,-66],[150,-69],[165,-71],[180,-73],[180,-89],[-180,-89]]
+];
+const SEAS=[
+  [[-94,58],[-90,53],[-82,52],[-78,55],[-77,62],[-82,64],[-88,64],[-93,62]],           /* 哈得孙湾 */
+  [[47,37],[53,37],[54,41],[52,45],[49,46],[47,42]],                                    /* 里海 */
+  [[28,41.5],[33,42],[38,41.5],[41.5,42.5],[41,45],[36,47],[31,46],[28,44]],           /* 黑海 */
+  [[10,54],[14,54.5],[21,55],[27,59],[25,60.5],[21,63],[19,60],[13,56]]                 /* 波罗的海 */
+];
+const ISLES=[
+  [[-5,50],[-3,53],[-4,58],[-1,57],[0,53],[1,51]],          /* 英 */
+  [[-24,64],[-22,66],[-15,66],[-14,64],[-20,63.5]],          /* 冰岛 */
+  [[130,31],[135,34],[140,37],[142,45],[145,44],[141,38],[136,33],[131,30]], /* 日本 */
+  [[44,-25],[43,-16],[48,-13],[50,-16],[48,-25]],            /* 马达加斯加 */
+  [[109,-1],[110,5],[117,7],[119,1],[116,-3],[110,-2]],      /* 加里曼丹 */
+  [[95,5],[98,2],[103,-4],[106,-6],[102,-5],[96,3]],         /* 苏门答腊 */
+  [[105,-6],[114,-7],[114,-8.5],[105,-7]],                   /* 爪哇 */
+  [[131,-1],[136,-2],[141,-3],[147,-6],[150,-10],[143,-9],[137,-8],[132,-4]], /* 新几内亚 */
+  [[120,14],[122,18],[121,18.5],[119,16],[120,13]],          /* 吕宋 */
+  [[122,7],[126,9],[126,6],[122,6]],                         /* 棉兰老 */
+  [[172,-34],[175,-37],[178,-38],[174,-41],[173,-35]],       /* 北岛 */
+  [[172,-40],[174,-42],[171,-44],[167,-46],[166,-45],[170,-41]], /* 南岛 */
+  [[80,6],[82,8],[80,9],[79,7]],                             /* 斯里兰卡 */
+  [[120,22],[122,25],[121,25.3],[120,23]],                   /* 台湾岛 */
+  [[-85,22],[-78,21],[-74,20],[-80,22.5]]                    /* 古巴 */
+];
+/* 地图视图：等经距投影 */
+function makeView(lon0,lon1,lat0,lat1,pw,ph,pad){
+  const s=Math.min((pw-2*pad)/(lon1-lon0),(ph-2*pad)/(lat1-lat0));
+  const ox=pad+((pw-2*pad)-(lon1-lon0)*s)/2, oy=pad+((ph-2*pad)-(lat1-lat0)*s)/2;
+  return {s,ox,oy,pw,ph,lon0,lat1,
+    px(lon,lat){return [ox+(lon-lon0)*s, oy+(lat1-lat)*s];}
+  };
+}
+function drawMap(g,v,o={}){
+  /* 海洋 */
+  const gr=g.createLinearGradient(0,0,0,v.ph);
+  gr.addColorStop(0,'#0a2c4d');gr.addColorStop(1,'#0c3a5c');
+  g.fillStyle=gr;g.fillRect(0,0,v.pw,v.ph);
+  /* 经纬网 */
+  g.save();
+  g.strokeStyle='rgba(150,200,235,.10)';g.lineWidth=1;
+  for(let lo=-180;lo<=180;lo+=30){
+    const p1=v.px(lo,90),p2=v.px(lo,-90);
+    g.beginPath();g.moveTo(p1[0],p1[1]);g.lineTo(p2[0],p2[1]);g.stroke();
+  }
+  for(let la=-60;la<=80;la+=30){
+    const p1=v.px(-180,la),p2=v.px(180,la);
+    g.beginPath();g.moveTo(p1[0],p1[1]);g.lineTo(p2[0],p2[1]);g.stroke();
+  }
+  /* 赤道 */
+  const pe1=v.px(-180,0),pe2=v.px(180,0);
+  g.strokeStyle='rgba(255,220,120,.35)';g.setLineDash([7,6]);
+  g.beginPath();g.moveTo(pe1[0],pe1[1]);g.lineTo(pe2[0],pe2[1]);g.stroke();g.setLineDash([]);
+  g.restore();
+  /* 陆地 */
+  const poly=(pts,fill)=>{
+    g.beginPath();
+    pts.forEach((p,i)=>{const q=v.px(p[0],p[1]);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);});
+    g.closePath();g.fillStyle=fill;g.fill();
+    g.strokeStyle='rgba(190,230,200,.30)';g.lineWidth=1;g.stroke();
+  };
+  LAND.forEach(p=>poly(p,o.land||'#33523f'));
+  ISLES.forEach(p=>poly(p,o.land||'#33523f'));
+  g.fillStyle=o.sea||'#0c3a5c';
+  SEAS.forEach(p=>{g.beginPath();p.forEach((q,i)=>{const s=v.px(q[0],q[1]);i?g.lineTo(s[0],s[1]):g.moveTo(s[0],s[1]);});g.closePath();g.fill();});
+}
+
+/* ================= 洋流数据 ================= */
+const CUR=[
+  {n:'日本暖流',t:'w',s:[[[120,22],[127,27],[133,32],[140,35],[144,37]]],lp:[133,36],dy:-30},
+  {n:'北太平洋暖流',t:'w',s:[[[147,39],[162,41],[176,42]],[[-177,43],[-160,42],[-148,41]]],lp:[162,45]},
+  {n:'加利福尼亚寒流',t:'c',s:[[[-145,39],[-136,32],[-124,27],[-117,25]]],lp:[-141,30]},
+  {n:'千岛寒流',t:'c',s:[[[159,55],[152,48],[146,43],[142,40]]],lp:[151,50]},
+  {n:'北赤道暖流',t:'w',s:[[[-115,16],[-145,14],[-172,13]],[[175,13],[158,13],[140,15],[128,17],[121,21]]],lp:[-145,10]},
+  {n:'墨西哥湾暖流',t:'w',s:[[[-81,25],[-78,31],[-72,36],[-63,40],[-55,43]]],lp:[-72,31]},
+  {n:'北大西洋暖流',t:'w',s:[[[-50,45],[-38,50],[-24,54],[-10,57],[0,59],[10,61]]],lp:[-24,49],dy:-28},
+  {n:'加那利寒流',t:'c',s:[[[-10,44],[-14,36],[-17,27],[-18,20]]],lp:[-21,29]},
+  {n:'拉布拉多寒流',t:'c',s:[[[-60,62],[-56,54],[-52,48],[-50,44]]],lp:[-58,56]},
+  {n:'北赤道暖流',t:'w',s:[[[-16,13],[-35,12],[-52,13],[-66,16],[-76,21],[-81,25]]],lp:[-40,9]},
+  {n:'南赤道暖流',t:'w',s:[[[-85,-3],[-115,-5],[-145,-7],[-172,-9]],[[176,-10],[162,-12],[150,-14]]],lp:[-125,-9]},
+  {n:'东澳暖流',t:'w',s:[[[152,-18],[154,-25],[151,-33]]],lp:[160,-27]},
+  {n:'秘鲁寒流',t:'c',s:[[[-72,-44],[-73,-32],[-77,-20],[-83,-9],[-88,-4]]],lp:[-80,-27]},
+  {n:'南赤道暖流',t:'w',s:[[[-14,-4],[-30,-6],[-42,-9]]],lp:[-28,-9],dy:24},
+  {n:'巴西暖流',t:'w',s:[[[-38,-12],[-40,-20],[-46,-28],[-52,-34]]],lp:[-49,-23]},
+  {n:'本格拉寒流',t:'c',s:[[[16,-33],[11,-24],[8,-15],[3,-8],[-2,-5]]],lp:[13,-21]},
+  {n:'厄加勒斯暖流',t:'w',s:[[[42,-18],[37,-27],[30,-34],[23,-40],[16,-43]]],lp:[38,-32]},
+  {n:'西澳寒流',t:'c',s:[[[105,-22],[103,-30],[97,-37]]],lp:[110,-30]},
+  {n:'南赤道暖流',t:'w',s:[[[52,-8],[68,-11],[82,-13],[96,-15],[104,-17]]],lp:[72,-16]},
+  {n:'西风漂流',t:'c',s:[[[-176,-53],[-140,-51],[-100,-50],[-60,-51],[-20,-50],[20,-50],[60,-50],[100,-49],[140,-50],[176,-53]]],lp:[100,-56]},
+  {n:'赤道逆流',t:'w',s:[[[92,4],[120,5],[150,6],[176,7]],[[-176,8],[-148,8],[-118,7],[-98,7]]],lp:[150,10]}
+];
+const NIO_WINTER=[[100,8],[82,8],[64,8],[52,7],[48,1],[52,-5],[68,-6],[84,-6],[95,-5],[100,-2],[100,8]];
+const NIO_SUMMER=[[100,-7],[82,-8],[64,-8],[52,-5],[47,2],[50,9],[64,11],[80,11],[92,9],[98,4],[100,-2],[100,-7]];
+function curColor(t){return t==='w'?'#ffa060':t==='c'?'#5cc8ff':'#ffd166';}
+function rgba(hex,a){
+  const v=parseInt(hex.slice(1),16);
+  return `rgba(${v>>16&255},${v>>8&255},${v&255},${a})`;
+}
+
+/* ================= 通用：星空 ================= */
+function stars(g,n,seed,ymax){
+  const rnd=seeded(seed);
+  g.fillStyle='rgba(255,255,255,.8)';
+  for(let i=0;i<n;i++){
+    const x=rnd()*W,y=rnd()*(ymax||H*0.5),r=rnd()*1.2+0.3;
+    g.globalAlpha=0.25+rnd()*0.6;
+    g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
+  }
+  g.globalAlpha=1;
+}
+function sunIcon(g,x,y,r){
+  const gr=g.createRadialGradient(x,y,0,x,y,r*3.2);
+  gr.addColorStop(0,'rgba(255,220,120,.9)');gr.addColorStop(0.25,'rgba(255,190,80,.35)');gr.addColorStop(1,'rgba(255,190,80,0)');
+  g.fillStyle=gr;g.beginPath();g.arc(x,y,r*3.2,0,TAU);g.fill();
+  g.fillStyle='#ffd977';g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
+}
+function moonIcon(g,x,y,r){
+  g.fillStyle='#e8edf5';g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
+  g.fillStyle='rgba(180,190,205,.6)';g.beginPath();g.arc(x-r*0.3,y-r*0.2,r*0.22,0,TAU);g.fill();
+  g.beginPath();g.arc(x+r*0.25,y+r*0.3,r*0.16,0,TAU);g.fill();
+}
+function cloudIcon(g,x,y,s,alpha){
+  g.save();g.globalAlpha=alpha===undefined?0.85:alpha;
+  g.fillStyle='#cfe0ee';
+  g.beginPath();
+  g.arc(x-s*0.8,y,s*0.45,0,TAU);g.arc(x-s*0.3,y-s*0.32,s*0.6,0,TAU);
+  g.arc(x+s*0.35,y-s*0.2,s*0.5,0,TAU);g.arc(x+s*0.8,y,s*0.42,0,TAU);
+  g.rect(x-s*0.8,y,s*1.6,s*0.4);
+  g.fill();g.restore();
+}
+
+/* ================================================================
+   场景 1：大气受热过程
+================================================================ */
+function scnHeating(){
+  const st={night:false,cloud:false,labels:true};
+  let A=[],band=0,groundY=0,sunP=[0,0],clouds=[],ph=0;
+  function build(){
+    A=[];clouds=[];
+    groundY=H-58;band=H*0.30;sunP=[W*0.14,H*0.15];
+    const mk=a=>{a.f=wavySampler(a.x1,a.y1,a.x2,a.y2,a);return a;};
+    if(!st.night){
+      [0.34,0.55,0.78].forEach((tx,i)=>A.push(mk({k:'sw',x1:sunP[0]+8,y1:sunP[1]+12,x2:W*tx,y2:groundY-6,color:'#ffd45c',amp:5,wl:30,phase:i*1.4,sp:0.20,label:i===1?'太阳短波辐射':null})));
+      A.push(mk({k:'sw',x1:sunP[0]+8,y1:sunP[1]+12,x2:W*0.46,y2:band+10,color:'#ffe9a8',amp:4,wl:24,phase:2.6,sp:0.20,thin:true,label:'大气吸收少量'}));
+    }
+    const lw=st.night?[0.36,0.62]:[0.34,0.60,0.84];
+    lw.forEach((a,i)=>{
+      const esc=(i===1&&lw.length===3)||st.night&&i===0&&lw.length===2&&false;
+      A.push(mk({k:'lw',x1:W*a,y1:groundY-6,x2:W*a+20,y2:esc?H*0.05:band+8,color:'#ff8a5c',amp:6,wl:34,phase:i*1.7+1,sp:0.15,esc,label:i===0?'地面长波辐射':null}));
+    });
+    if(st.cloud){
+      clouds=[{x:W*0.70,y:H*0.19,r:36},{x:W*0.82,y:H*0.27,r:26}];
+      if(!st.night)A.push(mk({k:'sw',x1:clouds[0].x-6,y1:clouds[0].y-16,x2:clouds[0].x+40,y2:H*0.03,color:'#ffe9a8',amp:4,wl:22,phase:0.5,sp:0.20,thin:true,label:'云的反射（削弱）'}));
+      A.push(mk({k:'back',x1:clouds[0].x-8,y1:clouds[0].y+18,x2:clouds[0].x-36,y2:groundY-6,color:'#ff6d6d',amp:6,wl:30,phase:3.4,sp:0.14,big:true}));
+    }
+    A.push(mk({k:'back',x1:W*0.30,y1:band-4,x2:W*0.26,y2:groundY-6,color:'#ff6d6d',amp:6,wl:30,phase:0.2,sp:0.14,big:true,label:st.night?'大气逆辐射（夜间保温）':'大气逆辐射（保温作用）'}));
+    if(!st.cloud)A.push(mk({k:'back',x1:W*0.72,y1:band-4,x2:W*0.76,y2:groundY-6,color:'#ff6d6d',amp:6,wl:30,phase:2.9,sp:0.14,big:true}));
+  }
+  return {
+    state:st,
+    controls:[
+      {type:'option',key:'night',label:'时段',options:[{label:'白天',value:false},{label:'夜晚',value:true}],re:1},
+      {type:'toggle',key:'cloud',label:'☁ 云量',re:1},
+      {type:'toggle',key:'labels',label:'标注'}
+    ],
+    points:[
+      '大气对太阳短波辐射吸收很少，大部分太阳辐射穿过大气到达地面，使地面增温。',
+      '地面增温后以地面长波辐射把热量传给大气——地面是近地面大气主要、直接的热源。',
+      '大气（水汽、二氧化碳）吸收地面长波辐射后增温，并以大气逆辐射把热量还给地面——保温作用（温室效应）。',
+      '云的影响：白天云多→削弱强→气温不高；夜晚云多→逆辐射强→气温不低。晴朗夜晚昼夜温差大。',
+      '应用：月球没有大气，昼夜温差极大；青藏高原太阳辐射强、气温低，就是因为海拔高、大气薄。'
+    ],
+    layout(){build();},
+    update(dt){ph+=dt;A.forEach(a=>a.phase+=dt*a.sp*2.4);},
+    draw(g){
+      if(st.night){bg(g,'#040d1c','#0a1830');stars(g,90,7,H*0.55);}
+      else bg(g,'#0a3a66','#0a2138');
+      /* 大气层 */
+      const gr=g.createLinearGradient(0,band-H*0.16,0,band+H*0.12);
+      gr.addColorStop(0,'rgba(120,190,255,0)');gr.addColorStop(0.55,'rgba(120,190,255,.10)');gr.addColorStop(1,'rgba(120,190,255,0)');
+      g.fillStyle=gr;g.fillRect(0,band-H*0.16,W,H*0.28);
+      if(st.labels)haloText(g,'对流层大气（水汽 · 二氧化碳）',W*0.58,band-2,{size:13,color:'#9cd0ff'});
+      /* 地面 */
+      const gg=g.createLinearGradient(0,groundY-8,0,H);
+      gg.addColorStop(0,'#3d5233');gg.addColorStop(1,'#22301e');
+      g.fillStyle=gg;
+      g.beginPath();g.moveTo(0,groundY+6);
+      for(let x=0;x<=W;x+=40)g.lineTo(x,groundY+Math.sin(x*0.02)*4);
+      g.lineTo(W,H);g.lineTo(0,H);g.closePath();g.fill();
+      g.strokeStyle='#5d7a4a';g.lineWidth=2;
+      g.beginPath();g.moveTo(0,groundY+6);
+      for(let x=0;x<=W;x+=40)g.lineTo(x,groundY+Math.sin(x*0.02)*4);
+      g.stroke();
+      if(st.labels)haloText(g,'地面',W*0.06,groundY+22,{size:13,color:'#c8e2b5'});
+      /* 太阳/月亮 */
+      if(st.night)moonIcon(g,sunP[0],sunP[1],16);else sunIcon(g,sunP[0],sunP[1],16);
+      clouds.forEach(c=>cloudIcon(g,c.x,c.y,c.r,0.9));
+      /* 辐射箭头 */
+      A.forEach(a=>{
+        const col=a.color;
+        if(a.thin)g.globalAlpha=0.75;
+        const f=wavy(g,a.x1,a.y1,a.x2,a.y2,{color:col,amp:a.amp,wl:a.wl,phase:a.phase,width:a.big?3.4:2.4,head:a.big?11:9});
+        g.globalAlpha=1;
+        for(let i=0;i<3;i++){
+          const t=((ph*a.sp*2.4/TAU+i/3+a.phase*0.13)%1+1)%1;
+          const p=f(t);
+          g.fillStyle=col;g.globalAlpha=0.9;
+          g.beginPath();g.arc(p[0],p[1],a.big?3:2.4,0,TAU);g.fill();g.globalAlpha=1;
+        }
+        if(a.esc&&st.labels)haloText(g,'射向宇宙空间',a.x2+4,a.y2+14,{size:12,color:'#ffb894'});
+      });
+      /* 吸收点 */
+      if(!st.night){
+        g.fillStyle=`rgba(255,160,90,${0.35+0.2*Math.sin(ph*3)})`;
+        g.beginPath();g.arc(W*0.46,band+10,6,0,TAU);g.fill();
+      }
+      /* 标签 */
+      if(st.labels){
+        A.forEach(a=>{
+          if(!a.label)return;
+          const mx=(a.x1+a.x2)/2,my=(a.y1+a.y2)/2;
+          chip(g,a.label,mx,my,{fg:a.k==='back'?'#ffc2c2':a.k==='lw'?'#ffd0b8':'#fff3c9',dy:a.k==='back'?18:-16});
+        });
+      }
+      /* 图例 */
+      const leg=[['#ffd45c','太阳短波辐射'],['#ff8a5c','地面长波辐射'],['#ff6d6d','大气逆辐射']];
+      leg.forEach((l,i)=>{
+        const lx=18+i*150;
+        g.fillStyle=l[0];g.beginPath();g.arc(lx,H-76,4.5,0,TAU);g.fill();
+        haloText(g,l[1],lx+10,H-76,{size:12,align:'left',color:'#dceafc'});
+      });
+    }
+  };
+}
+
+/* ================================================================
+   场景 2：热力环流
+================================================================ */
+function scnThermal(){
+  const st={mode:'sea',day:true,parts:true,iso:false,labels:true};
+  let loops=[],slopes=[],notes=[],terrain=[],groundY=0,seaY=0,peakY=0,flows=[];
+  let ph=0;
+  function gauss(x,c,s){return Math.exp(-((x-c)*(x-c))/(2*s*s));}
+  function build(){
+    loops=[];slopes=[];notes=[];flows=[];
+    const CH=H-60;
+    if(st.mode==='sea'){
+      seaY=CH*0.72;
+      const R=st.day?1:-1;
+      const pts=[[W*0.70,seaY-14],[W*0.72,CH*0.50],[W*0.72,CH*0.36],[W*0.65,CH*0.28],[W*0.50,CH*0.26],[W*0.36,CH*0.28],[W*0.28,CH*0.38],[W*0.26,CH*0.52],[W*0.30,seaY-16],[W*0.42,seaY-20],[W*0.56,seaY-22]];
+      const pp=R>0?pts:pts.slice().reverse();
+      loops.push(buildPath(pp,{closed:true,smooth:true}));
+      if(st.day){
+        notes.push({t:'陆地增温快 · 空气上升',x:W*0.72,y:CH*0.42,c:'#ffb3a0'});
+        notes.push({t:'海洋增温慢 · 空气下沉',x:W*0.26,y:CH*0.44,c:'#a8ccff'});
+        notes.push({t:'近地面：海风',x:W*0.49,y:seaY-40,c:'#8ff0da'});
+      }else{
+        notes.push({t:'陆地降温快 · 空气下沉',x:W*0.72,y:CH*0.42,c:'#a8ccff'});
+        notes.push({t:'海洋降温慢 · 空气上升',x:W*0.26,y:CH*0.44,c:'#ffb3a0'});
+        notes.push({t:'近地面：陆风',x:W*0.49,y:seaY-40,c:'#8ff0da'});
+      }
+      flows.push(makeFlow(loops,{per:9,loop:true,fade:false,speed:40,colors:['#bfe8ff']}));
+    }
+    else if(st.mode==='city'){
+      groundY=CH*0.74;
+      for(const s of [1,-1]){
+        const pts=[
+          [W*0.50,groundY-12],[W*0.52,CH*0.36],[W*0.46,CH*0.30],
+          [W*(0.50-s*0.30),CH*0.30],[W*(0.50-s*0.36),CH*0.46],
+          [W*(0.50-s*0.36),CH*0.62],[W*(0.50-s*0.26),groundY-14],[W*(0.50-s*0.10),groundY-12]
+        ];
+        loops.push(buildPath(pts,{closed:true,smooth:true}));
+        flows.push(makeFlow([loops[loops.length-1]],{per:8,loop:true,fade:false,speed:38,colors:['#cfe8ff']}));
+      }
+      notes.push({t:'城市：气温高 · 空气上升',x:W*0.50,y:CH*0.30,c:'#ffb3a0'});
+      notes.push({t:'郊区：气温低 · 空气下沉',x:W*0.14,y:CH*0.50,c:'#a8ccff'});
+      notes.push({t:'郊区：气温低 · 空气下沉',x:W*0.86,y:CH*0.50,c:'#a8ccff'});
+      notes.push({t:'城市风（近地面：郊区→城市）',x:W*0.32,y:groundY-52,c:'#8ff0da'});
+      notes.push({t:'城市风',x:W*0.68,y:groundY-52,c:'#8ff0da'});
+    }
+    else{ /* valley */
+      const base=CH*0.74;
+      terrain=[];
+      for(let x=0;x<=W;x+=8){
+        const u=x/W;
+        const h=gauss(u,0.16,0.085)+gauss(u,0.84,0.085);
+        terrain.push([x,base-h*CH*0.42]);
+      }
+      peakY=base-CH*0.42;
+      const mkSlopePts=(a,b)=>{
+        const lo=Math.min(a,b),hi=Math.max(a,b),pts=[];
+        for(let u=lo;u<=hi+1e-9;u+=0.02){
+          const h=gauss(u,0.16,0.085)+gauss(u,0.84,0.085);
+          pts.push([u*W,base-h*CH*0.42-16]);
+        }
+        return pts;
+      };
+      const ls=mkSlopePts(0.12,0.46),rs=mkSlopePts(0.54,0.88);
+      slopes.push(buildPath(st.day?ls.slice().reverse():ls,{smooth:true}));
+      slopes.push(buildPath(st.day?rs:rs.slice().reverse(),{smooth:true}));
+      slopes.forEach(p=>flows.push(makeFlow([p],{per:7,fade:true,speed:36,colors:['#cfe8ff']})));
+      const pts=[[W*0.19,peakY-14],[W*0.21,CH*0.22],[W*0.42,CH*0.18],[W*0.50,CH*0.30],[W*0.50,CH*0.46],[W*0.36,CH*0.50],[W*0.24,CH*0.46]];
+      loops.push(buildPath(st.day?pts:pts.slice().reverse(),{closed:true,smooth:true}));
+      flows.push(makeFlow([loops[0]],{per:7,loop:true,fade:false,speed:34,colors:['#ffd9b8']}));
+      const pts2=pts.map(p=>[W-p[0],p[1]]);
+      loops.push(buildPath(st.day?pts2:pts2.slice().reverse(),{closed:true,smooth:true}));
+      flows.push(makeFlow([loops[1]],{per:7,loop:true,fade:false,speed:34,colors:['#ffd9b8']}));
+      if(st.day){
+        notes.push({t:'白天：坡面受热，气流沿坡上升——谷风',x:W*0.5,y:CH*0.10,c:'#ffd9a8'});
+        notes.push({t:'谷风',x:W*0.30,y:base-CH*0.16,c:'#8ff0da'});
+        notes.push({t:'谷风',x:W*0.70,y:base-CH*0.16,c:'#8ff0da'});
+      }else{
+        notes.push({t:'夜晚：坡面降温快，冷空气沿坡下滑——山风',x:W*0.5,y:CH*0.10,c:'#a8ccff'});
+        notes.push({t:'山风',x:W*0.30,y:base-CH*0.16,c:'#8ff0da'});
+        notes.push({t:'山风',x:W*0.70,y:base-CH*0.16,c:'#8ff0da'});
+      }
+    }
+  }
+  function drawGroundSea(g,CH){
+    if(st.mode==='sea'){
+      /* 海 */
+      const sg=g.createLinearGradient(0,seaY,0,CH);
+      sg.addColorStop(0,'#12496e');sg.addColorStop(1,'#0a2c47');
+      g.fillStyle=sg;g.fillRect(0,seaY,W*0.46,CH-seaY);
+      g.strokeStyle='rgba(140,220,255,.6)';g.lineWidth=2;
+      g.beginPath();
+      for(let x=0;x<=W*0.46;x+=8)g.lineTo(x,seaY+Math.sin(x*0.05+ph*2)*3);
+      g.stroke();
+      /* 陆 */
+      const lg=g.createLinearGradient(0,CH*0.6,0,CH);
+      lg.addColorStop(0,'#4a6238');lg.addColorStop(1,'#2c3d24');
+      g.fillStyle=lg;
+      g.beginPath();g.moveTo(W*0.46,seaY-6);g.lineTo(W,seaY-6);g.lineTo(W,CH);g.lineTo(W*0.46,CH);g.closePath();g.fill();
+      g.fillStyle=st.day?'rgba(255,140,80,.16)':'rgba(90,150,255,.16)';
+      g.fillRect(W*0.46,seaY-6,W*0.54,CH-seaY+6);
+      if(st.labels){
+        haloText(g,'海洋',W*0.22,seaY+34,{size:15,color:'#bfe4ff'});
+        haloText(g,'陆地',W*0.76,seaY+34,{size:15,color:'#d8ecc5'});
+      }
+    }
+  }
+  return {
+    state:st,
+    controls:[
+      {type:'option',key:'mode',label:'情境',options:[{label:'海陆风',value:'sea'},{label:'城市热岛',value:'city'},{label:'山谷风',value:'valley'}],re:1},
+      {type:'toggle',key:'day',label:'昼夜切换',re:1},
+      {type:'toggle',key:'parts',label:'粒子'},
+      {type:'toggle',key:'iso',label:'等压面',re:1},
+      {type:'toggle',key:'labels',label:'标注'}
+    ],
+    points:[
+      '根本原因：地面冷热不均；直接原因：同一水平面上产生气压差。',
+      '受热→空气膨胀上升→近地面低压、高空高压；冷却处相反。空气在水平方向上总是由高压流向低压。',
+      '海陆风：白天陆地增温快，近地面风从海洋吹向陆地（海风）；夜晚相反（陆风）。成因是海陆热力性质差异。',
+      '城市热岛环流：近地面风从郊区吹向城市。卫星城和有大气污染的工厂应布局在城市热岛环流之外。',
+      '山谷风：白天吹谷风（沿坡向上），夜晚吹山风（沿坡向下）；山谷和盆地夜间常因冷空气汇聚气温偏低。'
+    ],
+    layout(){build();},
+    update(dt){ph+=dt;flows.forEach(f=>f.update(dt));},
+    draw(g){
+      const CH=H-60;
+      const night=(st.mode==='sea'||st.mode==='valley')&&!st.day;
+      if(night){bg(g,'#050e1c','#0b1a2e');stars(g,70,11,CH*0.5);}
+      else bg(g,'#0a3a66','#0d2a45');
+      drawGroundSea(g,CH);
+      if(st.mode==='city'){
+        groundY=CH*0.74;
+        g.fillStyle='#3c4a34';g.fillRect(0,groundY,W,CH-groundY);
+        g.strokeStyle='#5d7a4a';g.lineWidth=2;
+        g.beginPath();g.moveTo(0,groundY);g.lineTo(W,groundY);g.stroke();
+        /* 建筑 */
+        const bw=W*0.028;let bx=W*0.38;
+        const rnd=seeded(5);
+        while(bx<W*0.62){
+          const bh=CH*(0.05+rnd()*0.13);
+          g.fillStyle='#55627a';g.fillRect(bx,groundY-bh,bw,bh);
+          g.fillStyle='rgba(255,220,140,.7)';
+          for(let wy=groundY-bh+6;wy<groundY-8;wy+=12)
+            for(let wx=bx+4;wx<bx+bw-6;wx+=10)
+              if(rnd()>0.45)g.fillRect(wx,wy,4,5);
+          bx+=bw+5;
+        }
+        const ht=g.createLinearGradient(0,groundY,0,groundY-CH*0.26);
+        ht.addColorStop(0,st.day?'rgba(255,120,60,.30)':'rgba(90,150,255,.30)');
+        ht.addColorStop(1,'rgba(0,0,0,0)');
+        g.fillStyle=ht;
+        g.fillRect(W*0.34,groundY-CH*0.26,W*0.32,CH*0.26);
+        if(st.labels){haloText(g,'市区',W*0.5,groundY+18,{size:14,color:'#ffd8b8'});haloText(g,'郊区',W*0.12,groundY+18,{size:14,color:'#bcd8ee'});haloText(g,'郊区',W*0.88,groundY+18,{size:14,color:'#bcd8ee'});}
+      }
+      if(st.mode==='valley'){
+        const base=CH*0.74;
+        const tg=g.createLinearGradient(0,peakY,0,CH);
+        tg.addColorStop(0,'#54713f');tg.addColorStop(1,'#2c3d24');
+        g.fillStyle=tg;
+        g.beginPath();g.moveTo(0,terrain[0][1]);
+        terrain.forEach(p=>g.lineTo(p[0],p[1]));
+        g.lineTo(W,CH);g.lineTo(0,CH);g.closePath();g.fill();
+        g.strokeStyle='#7d9a5f';g.lineWidth=2;
+        g.beginPath();terrain.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke();
+      }
+      /* 太阳/月亮 */
+      if(st.mode==='sea'||st.mode==='valley'){
+        if(st.day)sunIcon(g,W*0.85,CH*0.13,15);else moonIcon(g,W*0.85,CH*0.13,14);
+      }
+      /* 循环路径 */
+      loops.forEach(p=>{
+        g.strokeStyle='rgba(255,255,255,.16)';g.lineWidth=2;g.setLineDash([6,7]);
+        g.beginPath();
+        const n=Math.max(24,Math.round(p.len/10));
+        for(let i=0;i<=n;i++){const q=p.at(i/n);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);}
+        g.closePath();g.stroke();g.setLineDash([]);
+        chevrons(g,p,{spacing:95,color:'rgba(190,230,255,.6)',size:7,phase:ph*0.05});
+      });
+      slopes.forEach(p=>chevrons(g,p,{spacing:80,color:'rgba(190,230,255,.65)',size:7,phase:ph*0.06}));
+      /* 粒子 */
+      if(st.parts)flows.forEach(f=>f.draw(g));
+      /* 等压面 */
+      if(st.iso&&st.mode!=='valley'){
+        const gY=st.mode==='sea'?seaY:groundY;
+        const mk=(yTop,sag)=>[
+          [W*0.08,yTop-sag*0.5],[W*0.32,yTop-sag*0.6],[W*0.52,yTop+sag*0.2],[W*0.72,yTop+sag],[W*0.92,yTop+sag*1.05]
+        ];
+        const p1=mk(gY-CH*0.16,10),p2=mk(CH*0.34,-14);
+        [p1,p2].forEach((pp,i)=>{
+          g.strokeStyle='rgba(255,210,120,.75)';g.lineWidth=1.6;g.setLineDash([7,6]);
+          g.beginPath();pp.forEach((q,j)=>j?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.stroke();g.setLineDash([]);
+        });
+        if(st.labels){
+          haloText(g,'近地面等压面（热低压处下凹）',W*0.24,gY-CH*0.16-22,{size:12,color:'#ffe2a8'});
+          haloText(g,'高空等压面（上凸为高压）',W*0.24,CH*0.34-30,{size:12,color:'#ffe2a8'});
+        }
+      }
+      /* 标注 */
+      if(st.labels)notes.forEach(n=>chip(g,n.t,n.x,n.y,{fg:n.c}));
+    }
+  };
+}
+
+/* ================================================================
+   场景 3：三圈环流与气压带风带
+================================================================ */
+function scnCells(){
+  const st={hemi:'N',shift:0,bands:true,winds:true,loops:true,parts:true,labels:true};
+  let Cx=0,Cy=0,R=0,cells=[],bands=[],windBelt=[],flows=[];
+  function P(phi,r){
+    const a=phi*RAD;
+    return st.hemi==='N'?[Cx-r*Math.cos(a),Cy-r*Math.sin(a)]:[Cx+r*Math.cos(a),Cy-r*Math.sin(a)];
+  }
+  function th(phi){return st.hemi==='N'?(180+phi)*RAD:(-phi)*RAD;}
+  function arcPts(r,a,b,k=16){const out=[];for(let i=0;i<=k;i++)out.push(P(lerp(a,b,i/k),r));return out;}
+  function build(){
+    const sh=st.shift;
+    const eq=clamp(sh*0.8,-8,30),s30=clamp(30+sh,16,52),s60=clamp(60+sh*0.8,50,84);
+    bands=[
+      {lat:eq,name:'赤道低气压带',tp:'L'},
+      {lat:s30,name:'副热带高气压带',tp:'H'},
+      {lat:s60,name:'副极地低气压带',tp:'L'},
+      {lat:88,name:'极地高气压带',tp:'H'}
+    ];
+    windBelt=[
+      {a:eq,b:s30,name:st.hemi==='N'?'东北信风带':'东南信风带',dir:-1},
+      {a:s30,b:s60,name:'盛行西风带',dir:1},
+      {a:s60,b:88,name:'极地东风带',dir:-1}
+    ];
+    cells=[
+      {name:'低纬环流圈',lo:eq,hi:s30,rise:'lo',top:0.42},
+      {name:'中纬环流圈',lo:s30,hi:s60,rise:'hi',top:0.30},
+      {name:'高纬环流圈',lo:s60,hi:88,rise:'lo',top:0.17}
+    ];
+    cells[1].noLab=true;
+    const r1=R-20;
+    flows=[];
+    cells.forEach(c=>{
+      const r2=R-20-R*c.top;
+      let pts;
+      if(c.rise==='lo'){
+        pts=[P(c.lo,r1),P(c.lo,(r1+r2)/2),P(c.lo,r2)]
+          .concat(arcPts(r2,c.lo,c.hi))
+          .concat([P(c.hi,r2),P(c.hi,(r1+r2)/2),P(c.hi,r1)])
+          .concat(arcPts(r1,c.hi,c.lo));
+      }else{
+        pts=[P(c.hi,r1),P(c.hi,(r1+r2)/2),P(c.hi,r2)]
+          .concat(arcPts(r2,c.hi,c.lo))
+          .concat([P(c.lo,r2),P(c.lo,(r1+r2)/2),P(c.lo,r1)])
+          .concat(arcPts(r1,c.lo,c.hi));
+      }
+      c.path=buildPath(pts,{closed:true,smooth:true});
+      flows.push(makeFlow([c.path],{per:9,loop:true,fade:false,speed:30,colors:[c.rise==='lo'?'#ffd2ae':'#c8e2ff']}));
+    });
+  }
+  function arcBand(g,a,b,r,color,width){
+    g.beginPath();
+    const t1=th(a),t2=th(b);
+    g.arc(Cx,Cy,r,t1,t2,st.hemi!=='N');
+    g.strokeStyle=color;g.lineWidth=width;g.stroke();
+  }
+  function surfArrow(g,phi0,phi1,r,color){
+    const p0=P(phi0,r),p1=P(phi1,r);
+    arrow(g,p0[0],p0[1],p1[0],p1[1],{color,width:2.6,head:9});
+  }
+  return {
+    state:st,
+    controls:[
+      {type:'option',key:'hemi',label:'半球',options:[{label:'北半球',value:'N'},{label:'南半球',value:'S'}],re:1},
+      {type:'option',key:'seasonBtn',label:'季节',options:[{label:'春分',value:0},{label:'夏至',value:23.5},{label:'秋分',value:'eq2'},{label:'冬至',value:-23.5}],
+        fn(sc,v){sc.state.shift=(v==='eq2'?0:v);sc.layout();}},
+      {type:'slider',key:'shift',label:'直射点',min:-23.5,max:23.5,step:0.5,fn:null},
+      {type:'toggle',key:'bands',label:'气压带'},
+      {type:'toggle',key:'winds',label:'风带'},
+      {type:'toggle',key:'loops',label:'环流圈'},
+      {type:'toggle',key:'parts',label:'粒子'},
+      {type:'toggle',key:'labels',label:'名称'}
+    ],
+    points:[
+      '成因：太阳辐射的纬度差异是根本原因，地转偏向力使气流偏转，形成三圈环流。',
+      '七个气压带：赤道低气压带、副热带高气压带、副极地低气压带、极地高气压带（南北各一）。',
+      '低压带气流上升→多阴雨天气；高压带气流下沉→少雨干燥。',
+      '六个风带：低纬信风带、中纬西风带、高纬极地东风带。北半球气流向右偏，南半球向左偏。',
+      '移动规律：气压带风带随太阳直射点移动，北半球夏季北移、冬季南移，大约移动5°～10°。',
+      '气候应用：地中海气候＝西风带与副热带高压带交替控制；热带草原气候＝赤道低压带与信风带交替控制。'
+    ],
+    layout(){const CH=H-58;R=CH*0.80;Cx=st.hemi==='N'?R+80:W-R-80;Cy=CH-40;build();},
+    update(dt){flows.forEach(f=>f.update(dt));},
+    draw(g){
+      bg(g,'#081627','#0d2740');
+      stars(g,60,23,H*0.35);
+      const CH=H-58;
+      /* 地球剖面 */
+      g.beginPath();
+      g.arc(Cx,Cy,R,th(-6),th(96),st.hemi!=='N');
+      g.lineTo(Cx,Cy);g.closePath();
+      const eg=g.createRadialGradient(Cx,Cy,R*0.2,Cx,Cy,R);
+      eg.addColorStop(0,'#3b3428');eg.addColorStop(1,'#1c221a');
+      g.fillStyle=eg;g.fill();
+      /* 地表弧 */
+      arcBand(g,-4,94,R,'#7d9a5f',2.5);
+      /* 纬度刻度 */
+      [[0,'0°（赤道）'],[30,'30°'],[60,'60°'],[88,'90°']].forEach(l=>{
+        const p=P(l[0],R+16);
+        haloText(g,l[1],p[0],p[1],{size:11,color:'#7fa8c9'});
+      });
+      /* 环流圈 */
+      if(st.loops)cells.forEach(c=>{
+        g.strokeStyle='rgba(255,255,255,.13)';g.lineWidth=1.8;g.setLineDash([5,7]);
+        g.beginPath();
+        const n=Math.round(c.path.len/9);
+        for(let i=0;i<=n;i++){const q=c.path.at(i/n);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);}
+        g.closePath();g.stroke();g.setLineDash([]);
+        /* 上升/下沉箭头 */
+        const r1=R-20,r2=R-20-R*c.top;
+        const upLat=c.rise==='lo'?c.lo:c.hi, dnLat=c.rise==='lo'?c.hi:c.lo;
+        const u0=P(upLat,r1-4),u1=P(upLat,r2+6);
+        arrow(g,u0[0],u0[1],u1[0],u1[1],{color:'#ff8d75',width:3,head:11});
+        const d0=P(dnLat,r2+6),d1=P(dnLat,r1-4);
+        arrow(g,d0[0],d0[1],d1[0],d1[1],{color:'#6fa8ff',width:3,head:11});
+        if(st.labels&&!c.noLab){
+          chip(g,c.name,P((c.lo+c.hi)/2,(r1+r2)/2)[0],P((c.lo+c.hi)/2,(r1+r2)/2)[1],{fg:'#cfe4ff',dy:16,size:12});
+          const um=P(upLat,(r1+r2)/2);
+          haloText(g,'上升',um[0]+(st.hemi==='N'?-16:16),um[1],{size:11,color:'#ffb0a0'});
+          const dm=P(dnLat,(r1+r2)/2);
+          haloText(g,'下沉',dm[0]+(st.hemi==='N'?16:-16),dm[1],{size:11,color:'#a0c8ff'});
+        }else if(st.labels&&c.noLab){
+          chip(g,c.name,P((c.lo+c.hi)/2,(r1+r2)/2)[0],P((c.lo+c.hi)/2,(r1+r2)/2)[1],{fg:'#cfe4ff',dy:16,size:12});
+        }
+      });
+      /* 气压带 */
+      if(st.bands)bands.forEach(b=>{
+        const a=clamp(b.lat-4,0,94),bb=clamp(b.lat+4,0,94);
+        arcBand(g,a,bb,R+5,b.tp==='L'?'rgba(239,83,80,.75)':'rgba(66,165,245,.75)',11);
+        if(st.labels){
+          const p=P(b.lat,R+34);
+          chip(g,b.name,p[0],p[1],{fg:b.tp==='L'?'#ff9e93':'#8ecbff',dy:-8});
+        }
+      });
+      /* 风带 */
+      if(st.winds)windBelt.forEach(w=>{
+        arcBand(g,w.a,w.b,R-14,'rgba(125,211,252,.20)',10);
+        for(let i=0;i<3;i++){
+          const f=lerp(w.a,w.b,0.25+i*0.25);
+          const f2=f+w.dir*4;
+          surfArrow(g,f,f2,R-14,'rgba(160,225,255,.85)');
+        }
+        if(st.labels){
+          const mid=(w.a+w.b)/2,p=P(mid,R-52);
+          chip(g,w.name,p[0],p[1],{fg:'#bfe8ff',dy:-6,size:12});
+          /* 偏转示意 */
+          const gx=p[0]+(st.hemi==='N'?56:-56),gy=p[1];
+          g.strokeStyle='rgba(160,225,255,.7)';g.lineWidth=1.6;
+          g.beginPath();g.arc(gx,gy,7,st.hemi==='N'?-0.5:2.6,st.hemi==='N'?3.2:5.6,st.hemi!=='N');g.stroke();
+          const ea=st.hemi==='N'?3.2:5.6;
+          arrowHead(g,gx+Math.cos(ea)*7,gy+Math.sin(ea)*7,ea+(st.hemi==='N'?1.6:-1.6),6,'rgba(160,225,255,.85)');
+          haloText(g,st.hemi==='N'?'右偏':'左偏',gx,gy+16,{size:10,color:'#9fd4f0'});
+        }
+      });
+      /* 粒子 */
+      if(st.parts)flows.forEach(f=>f.draw(g));
+      /* 直射点提示 */
+      const sName=st.shift===0?'春分/秋分':st.shift>0?'夏至':'冬至';
+      const latAbs=Math.abs(st.shift);
+      chip(g,`太阳直射点：${latAbs.toFixed(1)}°${st.shift>=0?'N':'S'}（${sName}）`,W*0.5,30,{fg:'#ffe9a8',bc:'rgba(255,220,130,.4)',dy:0});
+    }
+  };
+}
+
+/* ================================================================
+   场景 4：季风环流
+================================================================ */
+function scnMonsoon(){
+  const st={season:'winter',parts:true,labels:true};
+  let P1=null,P2=null,flows=[],arrows=[];
+  let ph=0;
+  function panel(x,y,w,h){return {x,y,w,h,cx:x+w/2};}
+  function build(){
+    flows=[];arrows=[];
+    const CH=H-58,pad=14;
+    const w1=(W-pad*3)/2;
+    P1=panel(pad,62,w1,CH-68);
+    P2=panel(pad*2+w1,62,w1,CH-68);
+    const sum=st.season==='summer';
+    /* ---- 东亚 ---- */
+    {
+      const p=P1;
+      const landX=p.x+p.w*0.52;
+      p.coast=[];
+      for(let y=p.y+14;y<=p.y+p.h-14;y+=10)
+        p.coast.push([landX+Math.sin(y*0.035)*7,y]);
+      const mk=(pts,color)=>{const path=buildPath(pts,{smooth:true});arrows.push({path,color});flows.push(makeFlow([path],{per:6,fade:true,speed:44,colors:[color]}));};
+      if(!sum){
+        mk([[p.x+p.w*0.30,p.y+p.h*0.24],[p.x+p.w*0.44,p.y+p.h*0.40],[p.x+p.w*0.62,p.y+p.h*0.56],[p.x+p.w*0.88,p.y+p.h*0.74]],'#aee6ff');
+        mk([[p.x+p.w*0.20,p.y+p.h*0.44],[p.x+p.w*0.36,p.y+p.h*0.58],[p.x+p.w*0.55,p.y+p.h*0.72],[p.x+p.w*0.80,p.y+p.h*0.86]],'#aee6ff');
+      }else{
+        mk([[p.x+p.w*0.88,p.y+p.h*0.74],[p.x+p.w*0.62,p.y+p.h*0.56],[p.x+p.w*0.44,p.y+p.h*0.40],[p.x+p.w*0.28,p.y+p.h*0.22]],'#ffe2a8');
+        mk([[p.x+p.w*0.80,p.y+p.h*0.88],[p.x+p.w*0.55,p.y+p.h*0.74],[p.x+p.w*0.36,p.y+p.h*0.60],[p.x+p.w*0.18,p.y+p.h*0.42]],'#ffe2a8');
+      }
+    }
+    /* ---- 南亚 ---- */
+    {
+      const p=P2;
+      const yLand=p.y+p.h*0.40,yEq=p.y+p.h*0.62;
+      const mk=(pts,color)=>{const path=buildPath(pts,{smooth:true});arrows.push({path,color});flows.push(makeFlow([path],{per:6,fade:true,speed:44,colors:[color]}));};
+      if(!sum){
+        mk([[p.x+p.w*0.30,p.y+p.h*0.20],[p.x+p.w*0.34,p.y+p.h*0.36],[p.x+p.w*0.42,p.y+p.h*0.52],[p.x+p.w*0.44,p.y+p.h*0.78]],'#aee6ff');
+        mk([[p.x+p.w*0.58,p.y+p.h*0.18],[p.x+p.w*0.60,p.y+p.h*0.36],[p.x+p.w*0.66,p.y+p.h*0.52],[p.x+p.w*0.70,p.y+p.h*0.74]],'#aee6ff');
+      }else{
+        mk([[p.x+p.w*0.18,p.y+p.h*0.92],[p.x+p.w*0.30,p.y+p.h*0.72],[p.x+p.w*0.40,p.y+p.h*0.52],[p.x+p.w*0.52,p.y+p.h*0.34]],'#ffe2a8');
+        mk([[p.x+p.w*0.42,p.y+p.h*0.98],[p.x+p.w*0.52,p.y+p.h*0.78],[p.x+p.w*0.60,p.y+p.h*0.56],[p.x+p.w*0.68,p.y+p.h*0.34]],'#ffe2a8');
+        mk([[p.x+p.w*0.70,p.y+p.h*0.90],[p.x+p.w*0.74,p.y+p.h*0.70],[p.x+p.w*0.78,p.y+p.h*0.52],[p.x+p.w*0.84,p.y+p.h*0.36]],'#ffe2a8');
+      }
+    }
+  }
+  function drawPanel(g,p,cfg){
+    /* 海洋底 */
+    const sg=g.createLinearGradient(0,p.y,0,p.y+p.h);
+    sg.addColorStop(0,'#0a2c47');sg.addColorStop(1,'#0e3c60');
+    g.fillStyle=sg;roundRect(g,p.x,p.y,p.w,p.h,12);g.fill();
+    g.strokeStyle='rgba(120,190,240,.25)';g.lineWidth=1;g.stroke();
+    /* 陆地 */
+    g.save();roundRect(g,p.x,p.y,p.w,p.h,12);g.clip();
+    g.fillStyle=cfg.landColor;
+    g.beginPath();
+    if(cfg.orient==='left'){
+      g.moveTo(p.x,p.y);g.lineTo(p.x+p.w*0.55,p.y);
+      p.coast.forEach(c=>g.lineTo(c[0],c[1]));
+      g.lineTo(p.x,p.y+p.h);
+    }else{
+      g.moveTo(p.x,p.y);
+      g.lineTo(p.x+p.w,p.y);
+      g.lineTo(p.x+p.w,p.y+p.h*0.40);
+      g.lineTo(p.x+p.w*0.82,p.y+p.h*0.42);
+      g.lineTo(p.x+p.w*0.78,p.y+p.h*0.62);   /* 中南半岛 */
+      g.lineTo(p.x+p.w*0.72,p.y+p.h*0.40);
+      g.lineTo(p.x+p.w*0.62,p.y+p.h*0.70);   /* 印度半岛 */
+      g.lineTo(p.x+p.w*0.50,p.y+p.h*0.42);
+      g.lineTo(p.x+p.w*0.40,p.y+p.h*0.40);
+      g.lineTo(p.x,p.y+p.h*0.40);
+      g.lineTo(p.x,p.y);
+    }
+    g.closePath();g.fill();
+    g.strokeStyle='rgba(190,230,200,.4)';g.lineWidth=1.5;g.stroke();
+    /* 冷暖染色 */
+    g.fillStyle=cfg.tint;
+    if(cfg.orient==='left')g.fillRect(p.x,p.y,p.w*0.55,p.h);
+    else g.fillRect(p.x,p.y,p.w,p.h*0.45);
+    /* 赤道线（南亚） */
+    if(cfg.equator){
+      const y=p.y+p.h*0.62;
+      g.strokeStyle='rgba(255,220,120,.4)';g.setLineDash([7,6]);
+      g.beginPath();g.moveTo(p.x+6,y);g.lineTo(p.x+p.w-6,y);g.stroke();g.setLineDash([]);
+      haloText(g,'赤道',p.x+p.w-20,y-10,{size:11,color:'#ffe0a0'});
+    }
+    g.restore();
+  }
+  return {
+    state:st,
+    controls:[
+      {type:'option',key:'season',label:'季节',options:[{label:'冬季',value:'winter'},{label:'夏季',value:'summer'}],re:1},
+      {type:'toggle',key:'parts',label:'粒子'},
+      {type:'toggle',key:'labels',label:'标注'}
+    ],
+    points:[
+      '东亚季风成因：海陆热力性质差异——陆地吸热快放热快，海洋吸热慢放热慢。',
+      '冬季：蒙古—西伯利亚（亚洲）高压强盛，风从陆地吹向海洋：东亚为西北季风、南亚为东北季风，寒冷干燥。',
+      '夏季：陆地形成印度（亚洲）低压，风从海洋吹向陆地：东亚为东南季风、南亚为西南季风，高温多雨。',
+      '南亚夏季风的另一成因：气压带风带随季节北移，南半球的东南信风越过赤道后向右偏转，形成西南季风。',
+      '季风气候雨热同期，利于农业生产；但夏季风强弱不稳定，易造成旱涝灾害。'
+    ],
+    layout(){build();},
+    update(dt){ph+=dt;flows.forEach(f=>f.update(dt));},
+    draw(g){
+      bg(g,'#081627','#0c2233');
+      const sum=st.season==='summer';
+      /* 东亚 */
+      drawPanel(g,P1,{
+        orient:'left',
+        landColor:'#3c4a30',
+        tint:sum?'rgba(255,110,70,.15)':'rgba(90,150,255,.16)'
+      });
+      haloText(g,'东亚季风',P1.x+16,P1.y+18,{size:15,align:'left',color:'#ffffff'});
+      /* 南亚 */
+      drawPanel(g,P2,{
+        orient:'top',
+        landColor:'#3c4a30',
+        tint:sum?'rgba(255,110,70,.15)':'rgba(90,150,255,.16)',
+        equator:true
+      });
+      haloText(g,'南亚季风',P2.x+16,P2.y+18,{size:15,align:'left',color:'#ffffff'});
+      /* 风向路径 */
+      arrows.forEach(a=>{
+        g.strokeStyle=a.color;g.lineWidth=3;g.lineCap='round';g.globalAlpha=0.55;
+        const n=Math.round(a.path.len/8);
+        g.beginPath();
+        for(let i=0;i<=n;i++){const q=a.path.at(i/n);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);}
+        g.stroke();g.globalAlpha=1;
+        const q=a.path.at(0.99999);
+        arrowHead(g,q[0],q[1],a.path.ang(0.99999),12,a.color);
+        chevrons(g,a.path,{spacing:70,color:'rgba(255,255,255,.4)',size:6,phase:ph*0.08});
+      });
+      if(st.parts)flows.forEach(f=>f.draw(g));
+      /* 气压与天气标注 */
+      if(st.labels){
+        const sum2=sum;
+        if(sum2){
+          chip(g,'印度低压（陆地）',P1.x+P1.w*0.24,P1.y+P1.h*0.18,{fg:'#ff9e93',bc:'rgba(255,120,100,.45)'});
+          chip(g,'夏威夷高压（海洋）',P1.x+P1.w*0.78,P1.y+P1.h*0.24,{fg:'#8ecbff',bc:'rgba(90,170,255,.45)'});
+          chip(g,'高温多雨',P1.x+P1.w*0.24,P1.y+P1.h*0.34,{fg:'#ffd9a8'});
+          chip(g,'西北季风→夏季东南季风',P1.cx,P1.y+P1.h*0.94,{fg:'#ffe2a8',size:13});
+          chip(g,'亚洲大陆（印度低压）',P2.x+P2.w*0.5,P2.y+P2.h*0.10,{fg:'#ff9e93',bc:'rgba(255,120,100,.45)'});
+          chip(g,'西南季风：高温多雨',P2.x+P2.w*0.5,P2.y+P2.h*0.30,{fg:'#ffd9a8'});
+          chip(g,'东南信风越过赤道 → 右偏为西南季风',P2.x+P2.w*0.5,P2.y+P2.h*0.86,{fg:'#bfe8ff',size:12});
+        }else{
+          chip(g,'蒙古—西伯利亚高压',P1.x+P1.w*0.24,P1.y+P1.h*0.18,{fg:'#8ecbff',bc:'rgba(90,170,255,.45)'});
+          chip(g,'阿留申低压（海洋）',P1.x+P1.w*0.78,P1.y+P1.h*0.24,{fg:'#ff9e93',bc:'rgba(255,120,100,.45)'});
+          chip(g,'寒冷干燥',P1.x+P1.w*0.24,P1.y+P1.h*0.34,{fg:'#a8ccff'});
+          chip(g,'冬季西北季风（陆→海）',P1.cx,P1.y+P1.h*0.94,{fg:'#bfe8ff',size:13});
+          chip(g,'亚洲高压（蒙古—西伯利亚）',P2.x+P2.w*0.5,P2.y+P2.h*0.10,{fg:'#8ecbff',bc:'rgba(90,170,255,.45)'});
+          chip(g,'东北季风：低温干燥',P2.x+P2.w*0.5,P2.y+P2.h*0.30,{fg:'#a8ccff'});
+        }
+      }
+    }
+  };
+}
+
+/* ================================================================
+   场景 5：世界洋流
+================================================================ */
+function scnCurrents(){
+  const st={nio:'winter',names:true,pattern:false,parts:true};
+  let v=null,flows=[],paths=[],colors=[],phase=0;
+  const WARM='#ffa060',COLD='#5cc8ff',MON='#ffd166';
+  function build(){
+    paths=[];colors=[];flows=[];
+    const CH=H-58;
+    v=makeView(-180,180,-76,84,W,CH,6);
+    CUR.forEach(c=>{
+      c.cp=c.s.map(seg=>{
+        const pts=seg.map(p=>v.px(p[0],p[1]));
+        return buildPath(pts,{smooth:true,step:10});
+      });
+      c.cp.forEach(p=>{paths.push(p);colors.push(curColor(c.t));});
+    });
+    const nio=(st.nio==='winter'?NIO_WINTER:NIO_SUMMER).map(p=>v.px(p[0],p[1]));
+    nio.push(nio[0].slice());
+    paths.push(buildPath(nio,{smooth:true,step:10}));
+    colors.push(MON);
+    flows.push(makeFlow(paths,{per:7,speed:30,colors,fade:true}));
+  }
+  function drawLabels(g){
+    const drawn=[];
+    CUR.forEach(c=>{
+      if(!c.lp)return;
+      const p=v.px(c.lp[0],c.lp[1]);
+      if(drawn.some(d=>Math.hypot(d[0]-p[0],d[1]-p[1])<16))return;
+      drawn.push(p);
+      g.fillStyle=curColor(c.t);
+      g.beginPath();g.arc(p[0]-(c.n.length*6.2)-8,p[1]-16+(c.dy||0),3,0,TAU);g.fill();
+      haloText(g,c.n,p[0],p[1]-16+(c.dy||0),{size:11.5,color:'#eaf6ff'});
+    });
+  }
+  function drawPattern(g){
+    g.fillStyle='rgba(4,12,20,.45)';g.fillRect(0,0,W,H-58);
+    const gy=(lon,lat,dir,label)=>{
+      const p=v.px(lon,lat);
+      g.strokeStyle='rgba(255,230,160,.8)';g.lineWidth=3.5;
+      g.beginPath();
+      for(let i=0;i<=40;i++){
+        const a=-Math.PI/2+i/40*TAU*0.86*dir;
+        const q=[p[0]+Math.cos(a)*44,p[1]+Math.sin(a)*44*0.7];
+        i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);
+      }
+      g.stroke();
+      const a1=-Math.PI/2+TAU*0.86*dir;
+      arrowHead(g,p[0]+Math.cos(a1)*44,p[1]+Math.sin(a1)*44*0.7,a1+dir*1.8,13,'rgba(255,230,160,.9)');
+      haloText(g,label,p[0],p[1]+4,{size:12,color:'#ffe9a8'});
+    };
+    gy(-155,26,1,'顺时针');gy(-38,28,1,'顺时针');
+    gy(-120,-24,-1,'逆时针');gy(-22,-22,-1,'逆时针');gy(72,-24,-1,'逆时针');
+    chip(g,'中低纬海区（副热带为中心）：北顺南逆，大陆东岸暖流、西岸寒流',W*0.5,40,{fg:'#ffe9a8',size:13,bc:'rgba(255,220,130,.4)'});
+    chip(g,'北半球中高纬（副极地为中心）：逆时针',W*0.5,72,{fg:'#bfe8ff',size:12.5});
+    chip(g,'南半球中高纬：西风漂流环球流动（寒流）',W*0.5,102,{fg:'#bfe8ff',size:12.5});
+  }
+  return {
+    state:st,
+    controls:[
+      {type:'option',key:'nio',label:'北印度洋',options:[{label:'冬季（逆时针）',value:'winter'},{label:'夏季（顺时针）',value:'summer'}],re:1},
+      {type:'toggle',key:'names',label:'洋流名称'},
+      {type:'toggle',key:'pattern',label:'分布规律'},
+      {type:'toggle',key:'parts',label:'粒子'}
+    ],
+    points:[
+      '中低纬海区（以副热带为中心）：北半球顺时针、南半球逆时针；大陆东岸为暖流、西岸为寒流。',
+      '北半球中高纬海区（以副极地为中心）：呈逆时针方向，大陆西岸暖流（北大西洋暖流）、东岸寒流（拉布拉多寒流、千岛寒流）。',
+      '南半球中高纬：西风漂流环绕全球，性质为寒流。',
+      '北印度洋海区：季风洋流，冬季呈逆时针、夏季呈顺时针——"冬逆夏顺"。',
+      '洋流对气候：暖流增温增湿（如北大西洋暖流使西欧温暖），寒流降温减湿（秘鲁寒流沿岸荒漠）。',
+      '寒暖流交汇处多渔场：纽芬兰渔场、北海道渔场、北海渔场。'
+    ],
+    layout(){build();},
+    update(dt){phase+=dt;flows.forEach(f=>f.update(dt));},
+    draw(g){
+      const CH=H-58;
+      g.save();
+      g.beginPath();g.rect(0,0,W,CH);g.clip();
+      drawMap(g,v,{});
+      /* 洋流线 */
+      CUR.forEach(c=>{
+        c.cp.forEach(p=>{
+          g.strokeStyle=curColor(c.t);g.globalAlpha=0.4;g.lineWidth=3.5;g.lineCap='round';
+          const n=Math.round(p.len/8);
+          g.beginPath();
+          for(let i=0;i<=n;i++){const q=p.at(i/n);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);}
+          g.stroke();g.globalAlpha=1;
+          chevrons(g,p,{spacing:110,color:rgba(curColor(c.t),0.6),size:6,phase:phase*0.05});
+        });
+      });
+      /* 北印度洋季风洋流加亮 */
+      const nioPath=paths[paths.length-1];
+      g.strokeStyle=MON;g.globalAlpha=0.6;g.lineWidth=4;
+      const nn=Math.round(nioPath.len/8);
+      g.beginPath();
+      for(let i=0;i<=nn;i++){const q=nioPath.at(i/nn);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);}
+      g.stroke();g.globalAlpha=1;
+      chevrons(g,nioPath,{spacing:80,color:'rgba(255,220,140,.8)',size:7,phase:phase*0.06});
+      if(st.parts)flows.forEach(f=>f.draw(g));
+      if(st.names)drawLabels(g);
+      /* 索马里沿岸标注 */
+      const som=v.px(43,6);
+      haloText(g,st.nio==='summer'?'索马里寒流（夏季·上升流）':'索马里暖流（冬季）',som[0]-8,som[1]-24,{size:11,color:st.nio==='summer'?'#8ed0ff':'#ffc9a0'});
+      /* 北印度洋风向 */
+      {
+        const a1=v.px(62,14),a2=v.px(72,6),b1=v.px(88,15),b2=v.px(84,7);
+        if(st.nio==='winter'){arrow(g,a1[0]+40,a1[1]-6,a2[0]+30,a2[1]-4,{color:'#cfe8ff',width:2,head:8});arrow(g,b1[0],b1[1],b2[0]+8,b2[1],{color:'#cfe8ff',width:2,head:8});}
+        else{arrow(g,a2[0]+20,a2[1],a1[0]+50,a1[1]-8,{color:'#ffe9a8',width:2,head:8});arrow(g,b2[0]+10,b2[1],b1[0],b1[1],{color:'#ffe9a8',width:2,head:8});}
+      }
+      g.restore();
+      if(st.pattern)drawPattern(g);
+      /* 图例 */
+      const leg=[[WARM,'暖流（增温增湿）'],[COLD,'寒流（降温减湿）'],[MON,'北印度洋季风洋流']];
+      leg.forEach((l,i)=>{
+        const lx=16+i*158;
+        g.fillStyle=l[0];g.beginPath();g.arc(lx,H-70,4.5,0,TAU);g.fill();
+        haloText(g,l[1],lx+10,H-70,{size:12,align:'left',color:'#dceafc'});
+      });
+      chip(g,st.nio==='winter'?'北印度洋冬季：逆时针':'北印度洋夏季：顺时针',W-16,CH-30,{fg:'#ffd166',align:'right',dy:-8});
+    }
+  };
+}
+
+/* ================================================================
+   场景 6：北印度洋季风洋流
+================================================================ */
+function scnIndian(){
+  const st={season:'winter',names:true,winds:true,parts:true};
+  let v=null,flow=null,path=null,phase=0;
+  const MON='#ffd166';
+  const PLACE=[['非洲',37,-6],['阿拉伯半岛',47,20],['印度半岛',78,21],['斯里兰卡',83,7],['苏门答腊',99,-1],['阿拉伯海',63,13],['孟加拉湾',88,13]];
+  function build(){
+    const CH=H-58;
+    v=makeView(28,112,-14,30,W,CH,10);
+    const loop=(st.season==='winter'?NIO_WINTER:NIO_SUMMER).map(p=>v.px(p[0],p[1]));
+    loop.push(loop[0].slice());
+    path=buildPath(loop,{smooth:true,step:8});
+    flow=makeFlow([path],{per:26,loop:true,fade:false,speed:46,colors:[MON],size:3});
+  }
+  function drawWind(g){
+    const sum=st.season==='summer';
+    const mk=(lon0,lat0,lon1,lat1)=>{
+      const p0=v.px(lon0,lat0),p1=v.px(lon1,lat1);
+      arrow(g,p0[0],p0[1],p1[0],p1[1],{color:sum?'#ffe9a8':'#cfe8ff',width:3.5,head:13});
+    };
+    if(!sum){
+      mk(80,26,68,12);mk(68,24,56,10);mk(92,24,82,10);
+      chip(g,'东北季风',v.px(74,20)[0],v.px(74,20)[1],{fg:'#cfe8ff',dy:-10});
+    }else{
+      const q=(l0,l1,m)=>{
+        const p0=v.px(l0[0],l0[1]),pm=v.px(m[0],m[1]),p1=v.px(l1[0],l1[1]);
+        qarrow(g,p0,pm,p1,{color:'#ffe9a8',width:3.5,head:13});
+      };
+      q([50,-10],[68,10],[62,20]);
+      q([60,-11],[78,8],[76,17]);
+      q([72,-9],[88,6],[90,13]);
+      chip(g,'西南季风',v.px(70,16)[0],v.px(70,16)[1],{fg:'#ffe9a8',dy:-10});
+    }
+  }
+  return {
+    state:st,
+    controls:[
+      {type:'option',key:'season',label:'季节',options:[{label:'冬季（逆时针）',value:'winter'},{label:'夏季（顺时针）',value:'summer'}],re:1},
+      {type:'toggle',key:'winds',label:'季风风向'},
+      {type:'toggle',key:'names',label:'地名'},
+      {type:'toggle',key:'parts',label:'粒子'}
+    ],
+    points:[
+      '北印度洋海区比较封闭，洋流主要受季风驱动，方向随季节改变——"冬逆夏顺"。',
+      '冬季：盛行东北季风，海水自东向西流动，洋流呈逆时针方向；索马里沿岸为暖流。',
+      '夏季：盛行西南季风，海水自西向东流动，洋流呈顺时针方向。',
+      '夏季索马里沿岸：西南季风为离岸风，深层冷海水上涌补偿（上升补偿流），形成索马里寒流，沿岸多海雾、渔场丰富。',
+      '航海应用：古代商船借助季风与洋流往返亚非——冬季出海西行、夏季返航。'
+    ],
+    layout(){build();},
+    update(dt){phase+=dt;flow.update(dt);},
+    draw(g){
+      const CH=H-58;
+      g.save();
+      g.beginPath();g.rect(0,0,W,CH);g.clip();
+      drawMap(g,v,{});
+      /* 洋流圈 */
+      g.strokeStyle=MON;g.globalAlpha=0.55;g.lineWidth=5;g.lineCap='round';
+      const n=Math.round(path.len/7);
+      g.beginPath();
+      for(let i=0;i<=n;i++){const q=path.at(i/n);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);}
+      g.stroke();g.globalAlpha=1;
+      chevrons(g,path,{spacing:95,color:'rgba(255,220,140,.85)',size:8,phase:phase*0.05});
+      if(st.parts)flow.draw(g);
+      /* 索马里沿岸 */
+      const som=v.px(42,4);
+      chip(g,st.season==='summer'?'索马里寒流（上升补偿流·多雾）':'索马里暖流',som[0],som[1],{fg:st.season==='summer'?'#8ed0ff':'#ffc9a0',dy:-14});
+      /* 赤道 */
+      const pe1=v.px(28,0),pe2=v.px(112,0);
+      g.strokeStyle='rgba(255,220,120,.45)';g.setLineDash([8,7]);g.lineWidth=1.5;
+      g.beginPath();g.moveTo(pe1[0],pe1[1]);g.lineTo(pe2[0],pe2[1]);g.stroke();g.setLineDash([]);
+      haloText(g,'赤道',pe2[0]-16,pe2[1]-10,{size:12,color:'#ffe0a0'});
+      if(st.winds)drawWind(g);
+      if(st.names)PLACE.forEach(p=>{
+        const q=v.px(p[1],p[2]);
+        haloText(g,p[0],q[0],q[1],{size:12,color:'rgba(210,235,250,.9)'});
+      });
+      const cen=v.px(70,1);
+      chip(g,st.season==='winter'?'冬季：洋流逆时针 ❄':'夏季：洋流顺时针 ☀',cen[0],cen[1],{fg:'#ffd166',bc:'rgba(255,220,130,.4)',size:15,dy:-6});
+      g.restore();
+    }
+  };
+}
+
+/* ================================================================
+   场景 7：水循环
+================================================================ */
+function scnWater(){
+  const st={hl:'joint',names:true,parts:true};
+  let segs={},flows=[],terrain=[],seaY=0,riverP=[],ph=0;
+  const COL={joint:'#7dffb2',land:'#ffd166',sea:'#6cc8ff'};
+  function build(){
+    const CH=H-58;
+    seaY=CH*0.70;
+    terrain=[];
+    const prof=t=>t<0.48?Math.sin(t/0.48*Math.PI/2):1-(t-0.48)/0.52*0.62;
+    for(let x=0;x<=W;x+=8){
+      const u=x/W;
+      let y=seaY;
+      if(u>0.46){
+        const t=clamp((u-0.46)/0.54,0,1);
+        y=seaY-prof(t)*CH*0.36;
+      }
+      terrain.push([x,y]);
+    }
+    const T=u=>{
+      const x=clamp(u,0,1)*W;
+      const i=clamp(Math.round(x/8),0,terrain.length-1);
+      return terrain[i][1];
+    };
+    const P=(u,dy)=>[u*W,T(u)+dy];
+    segs={
+      evap:  {pts:[P(0.18,-6),[0.17*W,seaY-CH*0.18],[0.20*W,CH*0.34],[0.235*W,CH*0.30]],col:'#6cc8ff',lab:'蒸发',jl:'joint'},
+      evap2: {pts:[P(0.32,-6),[0.31*W,seaY-CH*0.14],[0.27*W,CH*0.32]],col:'#6cc8ff',lab:null,jl:'sea'},
+      trans: {pts:[P(0.80,-8),[0.79*W,CH*0.30],[0.72*W,CH*0.22]],col:'#9be8a8',lab:'蒸腾',jl:'land'},
+      trans2:{pts:[P(0.66,-8),[0.68*W,CH*0.26],[0.70*W,CH*0.22]],col:'#9be8a8',lab:null,jl:'land'},
+      ship:  {pts:[[0.24*W,CH*0.29],[0.42*W,CH*0.20],[0.60*W,CH*0.17],[0.685*W,CH*0.21]],col:'#a8d8ff',lab:'水汽输送',jl:'joint'},
+      rainB: {pts:[[0.70*W,CH*0.235],[0.705*W,CH*0.30],P(0.71,-4)],col:'#9bd0ff',lab:'降水',jl:'joint'},
+      rainA: {pts:[[0.25*W,CH*0.315],[0.24*W,CH*0.42],P(0.245,-4)],col:'#9bd0ff',lab:'降水',jl:'sea'},
+      rainL: {pts:[[0.71*W,CH*0.235],[0.71*W,CH*0.30],P(0.72,-4)],col:'#ffd9a8',lab:'降水',jl:'land'},
+      run:   {pts:[P(0.705,0),P(0.62,4),P(0.55,8),P(0.48,10),P(0.445,2)],col:'#6cd8ff',lab:'地表径流',jl:'joint'},
+      infil: {pts:[P(0.62,6),[0.62*W,CH*0.80]],col:'#c9a8ff',lab:'下渗',jl:'joint'},
+      gw:    {pts:[[0.62*W,CH*0.80],[0.52*W,CH*0.81],[0.46*W,CH*0.78],[0.445*W,seaY+14]],col:'#c9a8ff',lab:'地下径流',jl:'joint'}
+    };
+    flows=[];
+    Object.values(segs).forEach(s=>{
+      s.path=buildPath(s.pts,{smooth:true});
+      flows.push(makeFlow([s.path],{per:5,fade:true,speed:34,colors:[s.col],size:2.8}));
+    });
+    /* 河流线 */
+    riverP=[P(0.705,0),P(0.62,4),P(0.55,8),P(0.48,10),P(0.445,2)];
+  }
+  return {
+    state:st,
+    controls:[
+      {type:'option',key:'hl',label:'强调循环',options:[
+        {label:'海陆间循环',value:'joint'},{label:'陆地内循环',value:'land'},{label:'海上内循环',value:'sea'}],re:1},
+      {type:'toggle',key:'names',label:'环节名称'},
+      {type:'toggle',key:'parts',label:'粒子'}
+    ],
+    points:[
+      '主要环节：蒸发、植物蒸腾、水汽输送、降水、地表径流、下渗、地下径流。',
+      '三种类型：海陆间循环（大循环，最重要——陆地水不断得到补充更新）、陆地内循环、海上内循环。',
+      '人类影响最大的环节是地表径流：修水库、跨流域调水都在改变它。',
+      '植树种草可增加下渗、涵养水源；城市硬化地面使下渗减少、地表径流增多，易发内涝——"海绵城市"由此而来。',
+      '水循环的意义：维持全球水量动态平衡，塑造地表形态，并伴随物质迁移和能量交换。'
+    ],
+    layout(){build();},
+    update(dt){ph+=dt;flows.forEach(f=>f.update(dt));},
+    draw(g){
+      const CH=H-58;
+      bg(g,'#0a3a66','#0d2a45');
+      stars(g,0,1,0);
+      /* 太阳 */
+      sunIcon(g,W*0.12,CH*0.12,15);
+      /* 海洋 */
+      const sg=g.createLinearGradient(0,seaY,0,CH);
+      sg.addColorStop(0,'#155a88');sg.addColorStop(1,'#0a2c47');
+      g.fillStyle=sg;g.fillRect(0,seaY,W*0.44,CH-seaY);
+      g.strokeStyle='rgba(140,220,255,.55)';g.lineWidth=2;
+      g.beginPath();
+      for(let x=0;x<=W*0.44;x+=8)g.lineTo(x,seaY+Math.sin(x*0.05+ph*2)*3);
+      g.stroke();
+      /* 陆地 */
+      const tg=g.createLinearGradient(0,CH*0.3,0,CH);
+      tg.addColorStop(0,'#54713f');tg.addColorStop(1,'#2c3d24');
+      g.fillStyle=tg;
+      g.beginPath();g.moveTo(terrain[0][0],terrain[0][1]);
+      terrain.forEach(p=>g.lineTo(p[0],p[1]));
+      g.lineTo(W,CH);g.lineTo(0,CH);g.closePath();g.fill();
+      g.strokeStyle='#7d9a5f';g.lineWidth=2;
+      g.beginPath();terrain.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke();
+      /* 植被 */
+      g.fillStyle='#3f6b35';
+      for(let i=0;i<9;i++){
+        const u=0.78+i*0.022,x=u*W;
+        const idx=clamp(Math.round(x/8),0,terrain.length-1);
+        const y=terrain[idx][1];
+        g.beginPath();g.moveTo(x,y-10);g.lineTo(x-5,y+2);g.lineTo(x+5,y+2);g.closePath();g.fill();
+      }
+      /* 河流 */
+      g.strokeStyle='#4db8e8';g.lineWidth=3;g.lineCap='round';
+      g.beginPath();riverP.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke();
+      /* 地下水层 */
+      g.strokeStyle='rgba(140,200,255,.4)';g.setLineDash([8,6]);g.lineWidth=1.5;
+      g.beginPath();g.moveTo(W*0.45,CH*0.78);g.lineTo(W,CH*0.78);g.stroke();g.setLineDash([]);
+      haloText(g,'地下水位',W*0.86,CH*0.765,{size:11,color:'#9fd4f0'});
+      /* 云 */
+      cloudIcon(g,0.235*W,CH*0.30,26,0.95);
+      cloudIcon(g,0.70*W,CH*0.21,30,0.95);
+      /* 循环高亮 */
+      const hl=st.hl;
+      const dim=s=>hl!=='all'&&s.jl!==hl?0.3:1;
+      /* 环节箭头 */
+      Object.values(segs).forEach(s=>{
+        const a=dim(s);
+        g.globalAlpha=a;
+        g.strokeStyle=s.col;g.lineWidth=2.6;g.lineCap='round';
+        const n=Math.round(s.path.len/6);
+        g.beginPath();
+        for(let i=0;i<=n;i++){const q=s.path.at(i/n);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);}
+        g.stroke();
+        chevrons(g,s.path,{spacing:64,color:s.col.replace(')',',.75)').replace('#','rgba(')||'',size:6,phase:ph*0.07});
+        g.globalAlpha=1;
+      });
+      if(st.parts)flows.forEach((f,i)=>{
+        const s=Object.values(segs)[i];
+        f.baseAlpha=dim(s);
+        f.draw(g);
+      });
+      /* 环节标签 */
+      if(st.names)Object.values(segs).forEach(s=>{
+        if(!s.lab)return;
+        const m=s.path.at(0.55);
+        const a=dim(s);
+        g.globalAlpha=a;
+        chip(g,s.lab,m[0],m[1],{fg:s.col,size:12,dy:-14});
+        g.globalAlpha=1;
+      });
+      /* 地名 */
+      haloText(g,'海洋',W*0.18,seaY+26,{size:15,color:'#bfe4ff'});
+      haloText(g,'陆地',W*0.86,CH*0.52,{size:15,color:'#d8ecc5'});
+      /* 类型说明 */
+      const cap={joint:'海陆间循环（大循环）：海洋→陆地→海洋，陆地水的主要补充',
+                 land:'陆地内循环：陆地→陆地（蒸腾、蒸发→降水）',
+                 sea:'海上内循环：海洋→海洋（蒸发→降水，水量最大）'}[hl];
+      chip(g,cap,W*0.5,34,{fg:COL[hl],bc:'rgba(255,255,255,.18)',size:13,dy:0});
+      haloText(g,'↑ 水汽输送方向：海洋上空 → 陆地上空',W*0.44,CH*0.145,{size:11.5,color:'#a8d8ff'});
+    }
+  };
+}
+
+/* ================= 场景注册 ================= */
+const SCN=[
+  {icon:'☀️',name:'大气受热过程',sub:'太阳短波辐射 · 地面辐射 · 大气逆辐射（温室效应）',grp:'大气',make:scnHeating},
+  {icon:'🔄',name:'热力环流',sub:'海陆风 · 城市热岛 · 山谷风',grp:'大气',make:scnThermal},
+  {icon:'🌐',name:'三圈环流与气压带风带',sub:'七压六带 · 季节移动 · 南北半球对比',grp:'大气',make:scnCells},
+  {icon:'🌬️',name:'季风环流',sub:'东亚季风 · 南亚季风 · 冬夏对比',grp:'大气',make:scnMonsoon},
+  {icon:'🌊',name:'世界洋流分布',sub:'洋流模式规律 · 暖流寒流 · 北印度洋季风洋流',grp:'海洋',make:scnCurrents},
+  {icon:'🧭',name:'北印度洋季风洋流',sub:'冬逆夏顺 · 索马里寒流（上升补偿流）',grp:'海洋',make:scnIndian},
+  {icon:'💧',name:'水循环',sub:'环节与类型 · 海陆间循环 · 人类影响',grp:'水循环',make:scnWater}
+];
+
+/* ================= UI 构建 ================= */
+const S={paused:false,speed:1,time:0};
+let cur=null,curIdx=0;
+function buildSide(){
+  const side=$('#side');side.innerHTML='';
+  let lastGrp='';
+  SCN.forEach((s,i)=>{
+    if(s.grp!==lastGrp){
+      lastGrp=s.grp;
+      const d=document.createElement('div');d.className='grp';d.textContent=s.grp+'篇';
+      side.appendChild(d);
+    }
+    const b=document.createElement('button');b.className='sbtn'+(i===curIdx?' on':'');
+    b.innerHTML=`<span class="ic">${s.icon}</span><span>${s.name}</span>`;
+    b.onclick=()=>setScenario(i);
+    b.dataset.idx=i;
+    side.appendChild(b);
+  });
+}
+function markSide(){
+  document.querySelectorAll('.sbtn').forEach(b=>b.classList.toggle('on',+b.dataset.idx===curIdx));
+}
+function buildPoints(sc){
+  const ul=$('#points');ul.innerHTML='';
+  (sc.points||[]).forEach(p=>{const li=document.createElement('li');li.textContent=p;ul.appendChild(li);});
+}
+function buildCtrls(sc){
+  const c=$('#ctrls');c.innerHTML='';
+  (sc.controls||[]).forEach(ct=>{
+    if(ct.type==='toggle'){
+      const b=document.createElement('button');
+      b.className='chip'+(sc.state[ct.key]?' on':'');
+      b.textContent=ct.label;
+      b.onclick=()=>{
+        sc.state[ct.key]=!sc.state[ct.key];
+        b.classList.toggle('on',sc.state[ct.key]);
+        if(ct.re)sc.layout();
+      };
+      c.appendChild(b);
+    }else if(ct.type==='option'){
+      const lab=document.createElement('span');lab.className='ctl-lab';lab.textContent=ct.label;
+      c.appendChild(lab);
+      const seg=document.createElement('div');seg.className='seg';
+      ct.options.forEach(o=>{
+        const isOn=sc.state[ct.key]===o.value||(ct.key==='season'&&sc.state.shift===o.value&&o.value!==0.01);
+        const b=document.createElement('button');
+        b.textContent=o.label;
+        if(isOn)b.className='on';
+        b.onclick=()=>{
+          sc.state[ct.key]=o.value;
+          [...seg.children].forEach(x=>x.classList.remove('on'));
+          b.classList.add('on');
+          if(ct.fn)ct.fn(sc,o.value);
+          else sc.layout();
+        };
+        seg.appendChild(b);
+      });
+      c.appendChild(seg);
+    }else if(ct.type==='slider'){
+      const lab=document.createElement('span');lab.className='ctl-lab';lab.textContent=ct.label;
+      const inp=document.createElement('input');
+      inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step||0.1;inp.value=sc.state[ct.key];
+      inp.style.width=(ct.width||110)+'px';
+      inp.oninput=()=>{sc.state[ct.key]=parseFloat(inp.value);sc.layout();};
+      c.appendChild(lab);c.appendChild(inp);
+    }
+  });
+}
+function setScenario(i){
+  curIdx=((i%SCN.length)+SCN.length)%SCN.length;
+  const s=SCN[curIdx];
+  cur=s.make();
+  $('#scnName').textContent=s.icon+' '+s.name;
+  $('#scnSub').textContent=s.sub;
+  buildCtrls(cur);buildPoints(cur);markSide();
+  cur.layout();
+}
+
+/* 头部控制 */
+$('#btnPlay').onclick=()=>{
+  S.paused=!S.paused;
+  $('#btnPlay').textContent=S.paused?'▶ 播放':'⏸ 暂停';
+};
+$('#speed').oninput=e=>{
+  S.speed=parseFloat(e.target.value);
+  $('#speedVal').textContent=S.speed.toFixed(1)+'×';
+};
+$('#btnFull').onclick=()=>{
+  if(document.fullscreenElement)document.exitFullscreen();
+  else $('#app').requestFullscreen&&$('#app').requestFullscreen();
+};
+$('#btnPoints').onclick=()=>{
+  $('#pointsCard').classList.toggle('show');
+  $('#btnPoints').classList.toggle('on');
+};
+$('#pointsCard').classList.add('show');
+$('#btnPoints').classList.add('on');
+
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(e.code==='Space'){e.preventDefault();$('#btnPlay').click();}
+  else if(e.key==='ArrowRight')setScenario(curIdx+1);
+  else if(e.key==='ArrowLeft')setScenario(curIdx-1);
+  else if(e.key==='f'||e.key==='F')$('#btnFull').click();
+  else if(/^[1-7]$/.test(e.key))setScenario(+e.key-1);
+});
+
+/* ================= 主循环 ================= */
+let lastT=performance.now();
+function frame(now){
+  const dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
+  if(cur){
+    try{
+      if(!S.paused){S.time+=dt;cur.update(dt*S.speed);}
+      ctx.clearRect(0,0,W,H);
+      cur.draw(ctx);
+    }catch(e){console.error(e);}
+  }
+  requestAnimationFrame(frame);
+}
+fit();
+buildSide();
+setScenario(0);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
