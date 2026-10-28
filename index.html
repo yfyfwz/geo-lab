@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>地理过程教学平台 · 在线版</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:radial-gradient(1200px 700px at 50% -10%,#123a5e,#060d16);color:#dfeaf5;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+h1{font-size:clamp(24px,4.5vw,40px);letter-spacing:6px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.6)}
+.logo{font-size:clamp(44px,9vw,84px);line-height:1;margin-bottom:10px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.5))}
+.sub{color:#7ba7c9;font-size:clamp(13px,1.8vw,16px);letter-spacing:3px;margin:10px 0 34px}
+.cards{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;width:100%;max-width:880px}
+a.card{flex:1 1 300px;max-width:400px;display:block;text-decoration:none;background:rgba(13,27,43,.88);border:1px solid #24486b;border-radius:18px;padding:30px 26px;color:#dfeaf5;transition:.18s;box-shadow:0 10px 34px rgba(0,0,0,.45)}
+a.card:hover{transform:translateY(-4px);border-color:#2f9dc9;box-shadow:0 16px 44px rgba(20,90,140,.35)}
+.card .ic{font-size:52px}
+.card b{display:block;font-size:clamp(18px,2.6vw,22px);margin:14px 0 8px;letter-spacing:2px;color:#fff}
+.card p{font-size:13.5px;line-height:1.8;color:#8fb9d8}
+.tag{display:inline-block;margin-top:14px;font-size:12px;color:#9fe0f5;background:rgba(30,110,140,.25);border:1px solid rgba(90,190,230,.4);border-radius:20px;padding:4px 14px;letter-spacing:1px}
+.tip{margin-top:36px;font-size:12.5px;color:#5f8db0;line-height:2;letter-spacing:1px}
+</style>
+</head>
+<body>
+  <div class="logo">🌍</div>
+  <h1>地理过程教学平台</h1>
+  <div class="sub">洋流 · 大气环流 · 水循环 · 课堂可视化</div>
+  <div class="cards">
+    <a class="card" href="3d/index.html">
+      <div class="ic">🌏</div>
+      <b>3D 写实版</b>
+      <p>真实地球 · 可拖转缩放<br>大气光晕与晨昏线 · 粒子洋流<br>山地海洋实景演示</p>
+      <span class="tag">推荐 · 手机可触摸旋转</span>
+    </a>
+    <a class="card" href="2d/index.html">
+      <div class="ic">📖</div>
+      <b>2D 简图版</b>
+      <p>课本简图风格 · 对应试卷插图<br>七压六带 · 冬逆夏顺 · 水循环环节<br>含讲解要点面板</p>
+      <span class="tag">适合照图讲解</span>
+    </a>
+  </div>
+  <div class="tip">
+    手机 / 平板：直接点开上面卡片，3D 版支持单指旋转、双指缩放<br>
+    电脑：空格 暂停 · ←→ 切换专题 · F 全屏
+  </div>
+</body>
+</html>
